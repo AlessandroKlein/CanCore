@@ -87,6 +87,35 @@ enum InputEvent : uint8_t {
     EVT_LONG_PRESS = 0x13
 };
 
+/*
+ * Sub-comandos SDO (byte 1 de una trama MSG_CONFIG).
+ *
+ * Una regla de vinculacion no entra en los 6 bytes utiles de una trama, por lo
+ * que se transfiere segmentada: BEGIN, cuatro CHUNK de 5 bytes y COMMIT con el
+ * CRC-16 del conjunto. Hasta que el CRC valida, la regla no se aplica ni se
+ * persiste.
+ */
+enum ConfigCommand : uint8_t {
+    CFG_SET_NODE_ID = 0x01,
+    CFG_RULE_BEGIN = 0x02,
+    CFG_RULE_CHUNK = 0x03,
+    CFG_RULE_COMMIT = 0x04,
+    CFG_RULE_DELETE = 0x05,
+    CFG_RULE_CLEAR = 0x06,
+    CFG_SAVE = 0x07,
+    CFG_RULE_COUNT = 0x08,
+    CFG_ACK = 0x7F
+};
+
+/* Codigos de resultado devueltos en un CFG_ACK. */
+enum ConfigStatus : uint8_t {
+    CFG_STATUS_OK = 0x00,
+    CFG_STATUS_BAD_REQUEST = 0x01,
+    CFG_STATUS_CRC_ERROR = 0x02,
+    CFG_STATUS_FULL = 0x03,
+    CFG_STATUS_STORAGE_ERROR = 0x04
+};
+
 /* Sub-comandos de la sesion OTA (byte 2 de una trama MSG_OTA). */
 enum OtaCommand : uint8_t {
     OTA_START = 0x01,

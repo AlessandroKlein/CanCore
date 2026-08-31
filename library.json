@@ -1,0 +1,32 @@
+{
+  "name": "PCD_CAN",
+  "version": "0.2.0",
+  "description": "Protocolo descentralizado punto a punto sobre CAN Bus 2.0B (29 bits) para ecosistemas domoticos e industriales: recursos direccionables por nodo, reglas de vinculacion persistentes y drivers TWAI (ESP32) y MCP2515 (AVR).",
+  "keywords": ["can", "canbus", "mcp2515", "twai", "esp32", "avr", "domotica", "modbus"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AlessandroKlein/canbus_ecosistema_v5.git"
+  },
+  "authors": [
+    {
+      "name": "Alessandro Klein",
+      "email": "aleklein23@gmail.com",
+      "maintainer": true
+    }
+  ],
+  "license": "MIT",
+  "frameworks": ["arduino", "espidf", "*"],
+  "platforms": ["atmelavr", "espressif32", "ststm32", "native"],
+  "headers": ["PCD_CAN.h"],
+  "export": {
+    "exclude": ["docs/*", "test/*", ".github/*"]
+  },
+  "build": {
+    "srcDir": "src",
+    "srcFilter": [
+      "+<*.cpp>",
+      "+<hal/*.cpp>",
+      "-<main.cpp>"
+    ]
+  }
+}

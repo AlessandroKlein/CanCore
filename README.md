@@ -2,7 +2,9 @@
 
 Ecosistema domótico e industrial **descentralizado** sobre CAN Bus 2.0B (29 bits), según el PRD v5.0 "MASTER".
 
-Este repositorio arranca con la **librería de comunicación** (PCD v1): protocolo, capa de abstracción de hardware y capa de nodo. Los puentes (MQTT, túnel UDP, Modbus), el servidor web y el OTA se construyen sobre esta base.
+Este repositorio contiene la **librería de comunicación** (PCD v1): protocolo, capa de abstracción de hardware, capa de nodo, gestión de recursos, persistencia y reglas descentralizadas. Los puentes (MQTT, túnel UDP, Modbus), el servidor web y el OTA se construyen sobre esta base.
+
+Documentación completa en [`docs/wiki`](docs/wiki/README.md).
 
 ## Estado
 
@@ -11,7 +13,10 @@ Este repositorio arranca con la **librería de comunicación** (PCD v1): protoco
 | `can_protocol` — ID de 29 bits + payload de 8 bytes | implementado y testeado |
 | `hal_can` — TWAI (ESP32), MCP2515 (AVR), bus virtual (native) | implementado |
 | `can_node` — feedback loop, suscripciones, heartbeat, SDO | implementado y testeado |
-| `device_manager`, `routing_engine`, `ota_manager`, `config_storage`, puentes | pendientes |
+| `device_manager` — canales, temporizadores y rampas no bloqueantes | implementado y testeado |
+| `config_storage` — EEPROM/NVS/memoria con CRC-16 | implementado y testeado |
+| `rule_engine` — reglas de vinculación persistentes + SDO segmentado | implementado y testeado |
+| `ota_manager`, servidor web, puentes MQTT/UDP/Modbus, backend STM32 | pendientes |
 
 ## Protocolo PCD v1
 
@@ -41,8 +46,11 @@ exactamente la misma difusión (`applyLocal`).
 
 ## Uso
 
+La librería es instalable tanto desde el Arduino IDE (`library.properties`) como desde PlatformIO
+(`library.json`); en ambos casos alcanza con incluir `<PCD_CAN.h>`.
+
 ```cpp
-#include "can_node.h"
+#include <PCD_CAN.h>
 
 pcd::Esp32TwaiBus bus(/*tx=*/5, /*rx=*/4);   // en AVR: pcd::Mcp2515Bus bus(10);
 pcd::CanNode node(bus, 0x0016);
@@ -73,7 +81,7 @@ node.sendCommand(0x16, pcd::RES_RELAY, 0x01, pcd::ACT_TOGGLE);
 ## Entornos de compilación
 
 ```bash
-pio test -e native            # 20 pruebas unitarias del protocolo y del nodo
+pio test -e native            # 32 pruebas unitarias del protocolo, del nodo y de las reglas
 pio run -e esp32_gateway      # gateway / puente multiprotocolo (TWAI)
 pio run -e esp32_hmi          # pantalla táctil CAN
 pio run -e atmega2560_node    # nodo de campo de alta densidad (MCP2515)
@@ -85,7 +93,7 @@ validar el ecosistema completo sin hardware.
 
 ## Configuración
 
-`include/system_config.h` concentra las banderas de compilación. Con `-D` en `platformio.ini` se activan
+`src/system_config.h` concentra las banderas de compilación. Con `-D` en `platformio.ini` se activan
 `FEATURE_OTA_MANAGER`, `FEATURE_WEB_SERVER`, `FEATURE_MQTT_BRIDGE`, `FEATURE_MODBUS_BRIDGE` y
 `FEATURE_TUNNEL_BRIDGE`. `CAN_LOG_LEVEL=0` elimina de la Flash todas las cadenas de trazas, crítico en AVR.
 

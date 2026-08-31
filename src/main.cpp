@@ -1,20 +1,24 @@
 /*
- * Punto de entrada universal.
+ * Firmware de referencia del nodo de campo.
  *
- * Ejemplo minimo de nodo de campo multi-funcion: un rele en el canal 1 y una
- * entrada digital en el canal 1 que conmuta ese rele localmente. El nodo
- * responde a comandos remotos y difunde el estado resultante (feedback loop).
+ * Un rele en el canal 1, una entrada digital en el canal 1 y una regla de
+ * vinculacion persistente: la pulsacion corta de la entrada conmuta el rele
+ * aunque no haya gateway en el bus. El nodo responde a comandos remotos y
+ * difunde el estado resultante (feedback loop).
+ *
+ * Este archivo se compila solo cuando PlatformIO construye un firmware
+ * (-DPCD_BUILD_FIRMWARE); al instalar el repositorio como libreria de Arduino
+ * queda fuera del build para no colisionar con el sketch del usuario.
  *
  * Los perfiles de gateway (MQTT, tunel UDP, Modbus, OTA, servidor web) se
  * activan con las banderas FEATURE_* de system_config.h.
  */
 
-#if defined(ARDUINO)
+#if defined(ARDUINO) && defined(PCD_BUILD_FIRMWARE)
 
 #include <Arduino.h>
 
-#include "can_node.h"
-#include "system_config.h"
+#include "PCD_CAN.h"
 
 namespace {
 
@@ -22,15 +26,19 @@ namespace {
 const int kCanTxPin = 5;
 const int kCanRxPin = 4;
 pcd::Esp32TwaiBus g_bus(kCanTxPin, kCanRxPin);
+pcd::NvsStorage g_storage;
 const uint16_t kNodeId = 0x0001; /* gateway */
 #else
 const uint8_t kMcpCsPin = 10;
 const int8_t kMcpIntPin = 2;
 pcd::Mcp2515Bus g_bus(kMcpCsPin, pcd::MCP_CLOCK_16MHZ, kMcpIntPin);
+pcd::EepromStorage g_storage;
 const uint16_t kNodeId = 0x0016; /* nodo de campo */
 #endif
 
+pcd::ConfigStore g_config(g_storage);
 pcd::CanNode g_node(g_bus, kNodeId);
+pcd::RuleEngine g_rules(g_node, g_config);
 
 const uint8_t kRelayPin = 7;
 const uint8_t kButtonPin = 8;
@@ -62,10 +70,15 @@ void setup() {
     pinMode(kRelayPin, OUTPUT);
     pinMode(kButtonPin, INPUT_PULLUP);
 
+    if (!g_config.begin(kNodeId)) {
+        LOG_INFO("Configuracion ausente o corrupta: se aplican valores por defecto");
+    }
+
     if (g_node.begin(CAN_BUS_BITRATE) != pcd::CAN_OK) {
         LOG_ERROR("No se pudo inicializar el bus CAN");
     }
     g_node.registerResource(pcd::RES_RELAY, 0x01, relayHandler);
+    g_rules.begin();
 }
 
 void loop() {
@@ -80,4 +93,4 @@ void loop() {
     g_last_button = button;
 }
 
-#endif  /* ARDUINO */
+#endif  /* ARDUINO && PCD_BUILD_FIRMWARE */

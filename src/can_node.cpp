@@ -9,10 +9,13 @@ CanNode::CanNode(ICanBus &bus, uint16_t node_id)
       boot_ms_(0),
       boot_ms_valid_(false),
       heartbeat_sent_(false),
-      resource_count_(0),
       subscription_count_(0),
       config_listener_(0),
-      config_ctx_(0) {}
+      config_ctx_(0),
+      frame_listener_(0),
+      frame_ctx_(0) {
+    devices_.setStateEmitter(&CanNode::emitState, this);
+}
 
 CanStatus CanNode::begin(uint32_t bitrate) {
     const CanStatus status = bus_.begin(bitrate);
@@ -25,15 +28,12 @@ CanStatus CanNode::begin(uint32_t bitrate) {
 
 bool CanNode::registerResource(uint8_t resource, uint8_t channel, ResourceHandler handler,
                                void *ctx) {
-    if (resource_count_ >= CAN_MAX_SUBSCRIPTIONS || handler == 0) {
-        return false;
-    }
-    ResourceEntry &entry = resources_[resource_count_++];
-    entry.resource = resource;
-    entry.channel = channel;
-    entry.handler = handler;
-    entry.ctx = ctx;
-    return true;
+    return devices_.registerChannel(resource, channel, handler, ctx);
+}
+
+void CanNode::emitState(uint8_t resource, uint8_t channel, float value, uint16_t flags,
+                        void *ctx) {
+    static_cast<CanNode *>(ctx)->publishState(resource, channel, value, flags);
 }
 
 bool CanNode::subscribe(uint16_t source, uint8_t resource, uint8_t channel, StateListener listener,
@@ -55,18 +55,13 @@ void CanNode::onConfig(ConfigListener listener, void *ctx) {
     config_ctx_ = ctx;
 }
 
-bool CanNode::isForThisNode(const CanId &id) const {
-    return id.target == address() || id.target == kBroadcastTarget;
+void CanNode::onAnyFrame(FrameListener listener, void *ctx) {
+    frame_listener_ = listener;
+    frame_ctx_ = ctx;
 }
 
-ResourceEntry *CanNode::findResource(uint8_t resource, uint8_t channel) {
-    for (uint8_t i = 0; i < resource_count_; ++i) {
-        if (resources_[i].resource == resource &&
-            (resources_[i].channel == channel || resources_[i].channel == kAnyChannel)) {
-            return &resources_[i];
-        }
-    }
-    return 0;
+bool CanNode::isForThisNode(const CanId &id) const {
+    return id.target == address() || id.target == kBroadcastTarget;
 }
 
 void CanNode::dispatchState(const CanFrame &frame) {
@@ -93,6 +88,10 @@ bool CanNode::handleFrame(const CanFrame &frame) {
     /* Las tramas emitidas por el propio nodo se ignoran. */
     if (id.source == node_id_) {
         return false;
+    }
+
+    if (frame_listener_ != 0) {
+        frame_listener_(frame, frame_ctx_);
     }
 
     switch (id.msg_type) {
@@ -131,15 +130,11 @@ bool CanNode::handleFrame(const CanFrame &frame) {
 }
 
 bool CanNode::applyLocal(uint8_t resource, uint8_t channel, uint8_t action, uint32_t param) {
-    ResourceEntry *entry = findResource(resource, channel);
-    if (entry == 0) {
-        return false;
-    }
     float value = 0.0f;
-    if (!entry->handler(channel, action, param, value, entry->ctx)) {
+    if (!devices_.apply(resource, channel, action, param, value)) {
         return false;
     }
-    publishState(resource, channel, value);
+    publishState(resource, channel, value, devices_.flags(resource, channel));
     return true;
 }
 
@@ -153,6 +148,8 @@ void CanNode::poll(uint32_t now_ms) {
     while (bus_.receive(frame) == CAN_OK) {
         handleFrame(frame);
     }
+
+    devices_.update(now_ms);
 
     if (bus_.isBusOff()) {
         bus_.recover();
@@ -179,6 +176,15 @@ CanStatus CanNode::publishTelemetry(uint8_t resource, uint8_t channel, float val
 
 CanStatus CanNode::publishInputEvent(uint8_t channel, uint8_t event) {
     return bus_.send(makeInputEvent(node_id_, channel, event));
+}
+
+CanStatus CanNode::sendConfig(uint8_t target, uint8_t sub_command, const uint8_t *payload,
+                              uint8_t payload_len) {
+    return bus_.send(makeConfig(node_id_, target, sub_command, payload, payload_len));
+}
+
+CanStatus CanNode::sendConfigAck(const uint8_t *payload, uint8_t payload_len) {
+    return bus_.send(makeConfig(node_id_, kBroadcastTarget, CFG_ACK, payload, payload_len));
 }
 
 CanStatus CanNode::sendHeartbeat(uint32_t now_ms) {
