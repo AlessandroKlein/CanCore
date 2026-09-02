@@ -25,6 +25,8 @@
     "srcDir": "src",
     "srcFilter": [
       "+<*.cpp>",
+      "+<system/*.cpp>",
+      "+<tunnel/*.cpp>",
       "+<hal/*.cpp>",
       "-<main.cpp>"
     ]

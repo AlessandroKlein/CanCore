@@ -12,6 +12,7 @@
  */
 
 #include "can_node.h"
+#include "can_node_tmpl.h"
 #include "can_protocol.h"
 #include "config_storage.h"
 #include "device_manager.h"
@@ -19,8 +20,22 @@
 #include "rule_engine.h"
 #include "system_config.h"
 
+/* Capa de servicios del sistema (agnostica al framework). */
+#include "system/system_api.h"
+#include "system/system_logger.h"
+#include "system/system_lock.h"
+
+/* Bucle de eventos asincrono (ISR -> ring buffer -> tick). */
+#include "core/ring_buffer.h"
+#include "core/event_loop.h"
+
+/* Motor de tunel CAN sobre IP (Data Stream Transport). */
+#include "tunnel/tunnel_transport.h"
+#include "tunnel/tunnel_engine.h"
+
 #if defined(ARDUINO_ARCH_ESP32)
 #include "hal/hal_can_esp32.h"
+#include "tunnel/tunnel_udp_esp32.h"
 #elif defined(__AVR__)
 #include "hal/hal_can_mcp2515.h"
 #else

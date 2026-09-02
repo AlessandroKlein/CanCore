@@ -46,40 +46,8 @@
 #define CAN_MAX_SUBSCRIPTIONS 16
 #endif
 
-#if CAN_LOG_LEVEL > 0
-#if defined(ARDUINO)
-#include <Arduino.h>
-#define CAN_LOG_PRINT(...) Serial.printf(__VA_ARGS__)
-#else
-#include <cstdio>
-#define CAN_LOG_PRINT(...) std::printf(__VA_ARGS__)
-#endif
-#else
-#define CAN_LOG_PRINT(...) \
-    do {                   \
-    } while (0)
-#endif
-
-#if CAN_LOG_LEVEL >= 1
-#define LOG_ERROR(fmt, ...) CAN_LOG_PRINT("[E] " fmt "\n", ##__VA_ARGS__)
-#else
-#define LOG_ERROR(fmt, ...) \
-    do {                    \
-    } while (0)
-#endif
-
-#if CAN_LOG_LEVEL >= 2
-#define LOG_INFO(fmt, ...) CAN_LOG_PRINT("[I] " fmt "\n", ##__VA_ARGS__)
-#else
-#define LOG_INFO(fmt, ...) \
-    do {                   \
-    } while (0)
-#endif
-
-#if CAN_LOG_LEVEL >= 3
-#define LOG_DEBUG(fmt, ...) CAN_LOG_PRINT("[D] " fmt "\n", ##__VA_ARGS__)
-#else
-#define LOG_DEBUG(fmt, ...) \
-    do {                    \
-    } while (0)
-#endif
+/* La libreria base es 100% agnostica al framework: no incluye <Arduino.h>.
+ * El reloj, el bloqueo y el diagnostico se inyectan via SystemApi.
+ * Los macros LOG_* provienen de system/system_logger.h. */
+#include "system/system_api.h"
+#include "system/system_logger.h"

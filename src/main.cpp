@@ -17,6 +17,7 @@
 #if defined(ARDUINO) && defined(PCD_BUILD_FIRMWARE)
 
 #include <Arduino.h>
+#include <stdarg.h>
 
 #include "PCD_CAN.h"
 
@@ -46,6 +47,25 @@ const uint8_t kButtonPin = 8;
 bool g_relay_state = false;
 bool g_last_button = true;
 
+pcd::SystemApi g_system_api;
+
+#if CAN_LOG_LEVEL > 0
+void logSink(uint8_t level, const char *format, va_list args) {
+    char buf[128];
+    vsnprintf(buf, sizeof(buf), format, args);
+    Serial.printf("[%u] %s\n", static_cast<unsigned>(level), buf);
+}
+#endif
+
+void setupSystemApi() {
+    g_system_api.millis = millis;
+    g_system_api.delay_ms = [](uint32_t ms) { delay(ms); };
+#if CAN_LOG_LEVEL > 0
+    g_system_api.log = logSink;
+#endif
+    pcd::setSystemApi(&g_system_api);
+}
+
 bool relayHandler(uint8_t channel, uint8_t action, uint32_t param, float &out_value, void *ctx) {
     (void)channel;
     (void)param;
@@ -64,6 +84,8 @@ bool relayHandler(uint8_t channel, uint8_t action, uint32_t param, float &out_va
 }  // namespace
 
 void setup() {
+    setupSystemApi();
+
 #if CAN_LOG_LEVEL > 0
     Serial.begin(115200);
 #endif

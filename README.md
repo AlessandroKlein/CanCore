@@ -16,7 +16,14 @@ Documentación completa en [`docs/wiki`](docs/wiki/README.md).
 | `device_manager` — canales, temporizadores y rampas no bloqueantes | implementado y testeado |
 | `config_storage` — EEPROM/NVS/memoria con CRC-16 | implementado y testeado |
 | `rule_engine` — reglas de vinculación persistentes + SDO segmentado | implementado y testeado |
-| `ota_manager`, servidor web, puentes MQTT/UDP/Modbus, backend STM32 | pendientes |
+| `system_api` — capa de servicios inyectable (reloj, bloqueo, logger) | implementado |
+| `system_logger` — motor de registro con sumidero configurable | implementado |
+| `system_lock` — LockGuard (cli/sei, RTOS o inyectado) | implementado |
+| `core/ring_buffer` — búfer SPSC lock-free para ISR | implementado |
+| `core/event_loop` — desacople ISR → main-loop | implementado |
+| `tunnel` — motor CAN-sobre-IP + transporte UDP ESP32 | implementado |
+| `can_node_tmpl` — plantilla con búfer de RX en tiempo de compilación | implementado |
+| `ota_manager`, servidor web, puentes MQTT/Modbus, backend STM32 | pendientes |
 
 ## Protocolo PCD v1
 
@@ -91,7 +98,74 @@ pio run -e atmega328p_node    # nodo de campo compacto (MCP2515)
 El entorno `native` usa `VirtualBus`, un bus CAN en memoria que conecta varios `NativeCanBus`, lo que permite
 validar el ecosistema completo sin hardware.
 
-## Configuración
+## Arquitectura agnóstica al framework
+
+El núcleo de la librería **no incluye `<Arduino.h>`**. Cada nodo, driver y el protocolo obtienen el reloj,
+el bloqueo y el diagnóstico desde un `SystemApi` inyectado en `setup()`:
+
+```cpp
+#include <PCD_CAN.h>
+
+void logSink(uint8_t level, const char *format, va_list args) {
+    char buf[128];
+    vsnprintf(buf, sizeof(buf), format, args);
+    Serial.println(buf);          // UART, WebSocket, SD, red...
+}
+
+static pcd::SystemApi api;
+
+void setup() {
+    api.millis = millis;
+    api.delay_ms = [](uint32_t ms) { delay(ms); };
+    api.log = logSink;
+    api.lock = []() { portENTER_CRITICAL(&spinlock); };  // opcional en RTOS
+    api.unlock = []() { portEXIT_CRITICAL(&spinlock); };
+    pcd::setSystemApi(&api);
+}
+```
+
+Con esto el mismo código compila en **Arduino, ESP-IDF, STM32Cube, FreeRTOS o un simulador nativo**. Los macros
+`LOG_ERROR`/`LOG_INFO`/`LOG_DEBUG` se enrutan al sumidero configurado y desaparecen por completo con
+`CAN_LOG_LEVEL=0`.
+
+### Bucle de eventos asíncrono
+
+Separación estricta entre la ISR y el procesamiento:
+
+```
+ISR     -> eventLoop.enqueue(frame)       (~µs, solo copia a un ring buffer SPSC)
+Main    -> eventLoop.tick()  o CanNodeTmpl::poll(now_ms)   (despacha fuera de interrupción)
+```
+
+`CanNodeTmpl<RxDepth>` usa una plantilla para dimensionar el búfer de RX en tiempo de compilación:
+
+```cpp
+CanNodeTmpl<4>  node(bus, 0x0016);   // ATmega328P: 4 tramas de RX
+CanNodeTmpl<64> gateway(bus, 0x0001); // ESP32 gateway: 64 tramas de RX
+```
+
+### Túnel CAN sobre IP (Data Stream Transport)
+
+La librería **no compila ningún stack IP**. `ITunnelTransport` entrega/recibe datagramas crudos; el usuario
+conecta su red (WiFi, Ethernet W5500, LwIP...) y el `TunnelEngine` empaqueta cada trama en 16 bytes:
+
+```
+Red del Usuario --bytes--> TunnelEngine --> Bus CAN
+```
+
+En ESP32, `UdpTunnelTransport` permite P2P entre Gateways:
+
+```cpp
+#include <PCD_CAN.h>
+pcd::UdpTunnelTransport udp(8888);
+pcd::TunnelEngine tunnel(udp);
+
+udp.begin();
+udp.addPeer(1, "192.168.1.50", 8888);
+// tunnel.sendFrame(1, frame);   // enruta al bus remoto
+```
+
+### Configuración
 
 `src/system_config.h` concentra las banderas de compilación. Con `-D` en `platformio.ini` se activan
 `FEATURE_OTA_MANAGER`, `FEATURE_WEB_SERVER`, `FEATURE_MQTT_BRIDGE`, `FEATURE_MODBUS_BRIDGE` y
