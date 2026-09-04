@@ -8,7 +8,8 @@ Gateway::Gateway(CanNode &node, RouteTable &table)
     : node_(node),
       table_(table),
       router_(table),
-      bridge_count_(0) {
+    bridge_count_(0),
+    now_ms_(0) {
     for (uint8_t i = 0; i < 4; ++i) {
         bridges_[i] = 0;
     }
@@ -25,7 +26,7 @@ void Gateway::frameTrampoline(const CanFrame &frame, void *ctx) {
 }
 
 void Gateway::onCanFrame(const CanFrame &frame) {
-    nodes_.observe(frame);
+    nodes_.observe(frame, now_ms_);
     /* 1. El enrutador traduce y ejecuta la tabla de rutas. */
     router_.onCanFrame(frame);
 
@@ -50,6 +51,8 @@ bool Gateway::attachBridge(IBridge &bridge) {
 }
 
 void Gateway::poll(uint32_t now_ms) {
+    now_ms_ = now_ms;
+    nodes_.expire(now_ms, CAN_HEARTBEAT_PERIOD_MS * 3UL);
     /* Drena los bridges: recibe entradas externas y las entrega al router. */
     for (uint8_t i = 0; i < bridge_count_; ++i) {
         IBridge *bridge = bridges_[i];

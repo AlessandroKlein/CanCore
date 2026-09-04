@@ -361,6 +361,18 @@ void test_web_pages_expose_gateway_views(void) {
     TEST_ASSERT_EQUAL_UINT8(WEB_VIEW_COUNT, 7);
 }
 
+void test_tunnel_relay_guard_blocks_loops_and_duplicates(void) {
+    TunnelRelayGuard guard(2);
+    CanFrame frame = makeStateBroadcast(0x0016, RES_RELAY, 1, 1.0f);
+
+    TEST_ASSERT_FALSE(guard.accept(2, frame, 0));
+    TEST_ASSERT_TRUE(guard.accept(1, frame, 100));
+    TEST_ASSERT_FALSE(guard.accept(1, frame, 200));
+    TEST_ASSERT_TRUE(guard.accept(1, frame, 6000));
+    guard.clear();
+    TEST_ASSERT_TRUE(guard.accept(1, frame, 7000));
+}
+
 int main(int, char **) {
     UNITY_BEGIN();
     RUN_TEST(test_set_system_api);
@@ -375,6 +387,7 @@ int main(int, char **) {
     RUN_TEST(test_ota_manager_streams_image_and_crc);
     RUN_TEST(test_ota_manager_rejects_invalid_image_and_can_abort);
     RUN_TEST(test_web_pages_expose_gateway_views);
+    RUN_TEST(test_tunnel_relay_guard_blocks_loops_and_duplicates);
     return UNITY_END();
 }
 

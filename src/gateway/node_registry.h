@@ -26,6 +26,8 @@ struct DiscoveredNode {
     uint8_t health;
     uint8_t resource_count;
     uint32_t seen_count;
+    uint32_t last_seen_ms;
+    bool online;
     DiscoveredResource resources[CAN_MAX_DISCOVERED_RESOURCES];
 };
 
@@ -34,7 +36,8 @@ class NodeRegistry {
     NodeRegistry();
 
     /* Actualiza inventario con heartbeat, announce o resource discovery. */
-    bool observe(const CanFrame &frame);
+    bool observe(const CanFrame &frame, uint32_t now_ms = 0);
+    void expire(uint32_t now_ms, uint32_t timeout_ms);
     void clear();
 
     uint8_t count() const { return count_; }

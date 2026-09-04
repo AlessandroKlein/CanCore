@@ -47,7 +47,7 @@ bool NodeRegistry::addResource(DiscoveredNode &node, uint8_t resource, uint8_t c
     return true;
 }
 
-bool NodeRegistry::observe(const CanFrame &frame) {
+bool NodeRegistry::observe(const CanFrame &frame, uint32_t now_ms) {
     const CanId id = frame.fields();
     if (id.source == 0 || (id.msg_type != MSG_HEARTBEAT && id.msg_type != MSG_DISCOVERY)) {
         return false;
@@ -57,6 +57,8 @@ bool NodeRegistry::observe(const CanFrame &frame) {
         return false;
     }
     ++node->seen_count;
+    node->online = true;
+    node->last_seen_ms = now_ms;
 
     if (id.msg_type == MSG_HEARTBEAT) {
         node->health = frame.data[2];
@@ -72,6 +74,15 @@ bool NodeRegistry::observe(const CanFrame &frame) {
         return addResource(*node, frame.resource(), frame.channel());
     }
     return frame.data[2] == DISCOVERY_REQUEST;
+}
+
+void NodeRegistry::expire(uint32_t now_ms, uint32_t timeout_ms) {
+    for (uint8_t i = 0; i < count_; ++i) {
+        DiscoveredNode &node = nodes_[i];
+        if (node.online && (now_ms - node.last_seen_ms) >= timeout_ms) {
+            node.online = false;
+        }
+    }
 }
 
 const DiscoveredNode *NodeRegistry::at(uint8_t index) const {

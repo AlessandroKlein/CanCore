@@ -72,6 +72,7 @@ class Gateway {
     IBridge *bridges_[4];
     uint8_t bridge_count_;
     NodeRegistry nodes_;
+    uint32_t now_ms_;
 };
 
 }  // namespace pcd

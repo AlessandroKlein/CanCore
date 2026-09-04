@@ -1,5 +1,7 @@
 # Puentes bidireccionales y comunicacion descentralizada
 
+Version de referencia: **0.6.0**.
+
 PCD_CAN sigue siendo una libreria de protocolo CAN personalizada. El bus CAN es el plano de control descentralizado: cada nodo ejecuta recursos y reglas localmente, y un gateway solo traduce protocolos o conecta segmentos.
 
 ## Regla de integracion
@@ -45,6 +47,12 @@ ESPHome puede conectarse por MQTT, API nativa o un componente externo. La opció
 ## Redes CAN
 
 `TunnelEngine` serializa una trama CAN en 16 bytes con CRC. UDP sirve para baja latencia; TCP o Ethernet con W5500 sirven cuando el proyecto exige entrega fiable. Para mantener descentralización, cada gateway debe aplicar filtros, anti-bucle y una lista de peers, sin convertir el gateway en controlador único.
+
+El ejemplo `examples/CanLanBridgeGateway` agrega dos paginas por gateway:
+estado (`/`), configuracion del peer (`/config`) y simulacion de dispositivos
+remotos (`/simulate`). `TunnelRelayGuard` evita loops y duplicados, pero no
+autentica el trafico; para produccion usar una LAN aislada, VPN o agregar
+HMAC/AEAD en el proyecto de aplicacion.
 
 ## Pantallas
 

@@ -1,6 +1,6 @@
 # canbus_ecosistema_v5
 
-Version actual: **0.5.0**.
+Version actual: **0.6.0**.
 
 Ecosistema domótico e industrial **descentralizado** sobre CAN Bus 2.0B (29 bits), según el PRD v5.0 "MASTER".
 
@@ -8,7 +8,8 @@ Este repositorio contiene la **librería de comunicación** (PCD v1): protocolo,
 
 Documentación completa en [`docs/wiki`](docs/wiki/README.md), con la guía de
 implementación en [`docs/guia-implementacion-proyectos.md`](docs/guia-implementacion-proyectos.md)
-y la integración web en [`docs/web-gateway.md`](docs/web-gateway.md).
+y la integración web en [`docs/web-gateway.md`](docs/web-gateway.md). El
+roadmap mantenido está en [`FUTURE_IMPROVEMENTS.md`](FUTURE_IMPROVEMENTS.md).
 
 ## Estado
 
@@ -34,6 +35,7 @@ y la integración web en [`docs/web-gateway.md`](docs/web-gateway.md).
 | `web/web_pages` — UI HTML agnóstica para gateway | implementado y testeado |
 | identidad manual/automática, descubrimiento y filtros CAN | implementado y testeado |
 | `gateway/node_registry` — inventario de nodos y recursos | implementado y testeado |
+| expiración de nodos y `TunnelRelayGuard` anti-loop | implementado y testeado |
 | puentes Matter/Zigbee/ESPHome/ESP-NOW, bootloader OTA receptor, HTTP concreto y backend STM32 | ejemplos y contratos disponibles; integracion final en proyectos de firmware |
 
 ## Protocolo PCD v1
@@ -129,7 +131,13 @@ Ejemplos incluidos:
 - `examples/CanBusModbusBidireccional`: Modbus <-> CAN.
 - `examples/CanBusEntreRedes`: CAN <-> UDP/TCP <-> CAN.
 - `examples/CanBusEthernetBidireccional`: CAN <-> Ethernet/W5500.
+- `examples/CanLanBridgeGateway`: dos ESP32, dos redes CAN y páginas de configuración LAN.
 - Ver el inventario completo en `examples/README.md`.
+
+El ejemplo LAN completo está documentado en
+`examples/CanLanBridgeGateway/README.md`. La release sigue siendo `0.6.0`:
+faltan autenticación criptográfica del túnel, bootloader OTA receptor y
+pruebas con hardware real para afirmar una release `1.0.0` de producción.
 
 El entorno `native` usa `VirtualBus`, un bus CAN en memoria que conecta varios `NativeCanBus`, lo que permite
 validar el ecosistema completo sin hardware.

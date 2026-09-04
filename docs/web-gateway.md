@@ -63,6 +63,8 @@ Para `ESPAsyncWebServer`, la ruta equivalente usa `request->send(200, "text/html
         "id": 22,
         "status": "online",
         "last_heartbeat": 123456,
+        "online": true,
+        "last_seen_ms": 123456,
         "id_mode": "manual",
         "resources": [{"type": 16, "name": "Rele", "channel": 1}]
     }]

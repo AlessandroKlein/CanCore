@@ -1,6 +1,6 @@
 # Guia de implementacion en proyectos
 
-Esta guia separa el nucleo `PCD_CAN` del firmware que lo usa. La libreria contiene protocolo, nodos, persistencia, reglas, routing, bridges agnosticos, OTA emisor y recursos HTML. El proyecto final agrega pines, red, credenciales, almacenamiento y servidor. Version documentada: **0.5.0**.
+Esta guia separa el nucleo `PCD_CAN` del firmware que lo usa. La libreria contiene protocolo, nodos, persistencia, reglas, routing, bridges agnosticos, OTA emisor y recursos HTML. El proyecto final agrega pines, red, credenciales, almacenamiento y servidor. Version documentada: **0.6.0**.
 
 ## 1. Elegir el tipo de proyecto
 

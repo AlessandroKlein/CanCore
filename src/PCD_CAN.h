@@ -33,6 +33,7 @@
 #include "tunnel/tunnel_transport.h"
 #include "tunnel/tunnel_engine.h"
 #include "tunnel/udp_tunnel_transport.h"
+#include "tunnel/tunnel_relay_guard.h"
 #include "ota_manager.h"
 
 /* Recursos HTML agnosticos para la interfaz del gateway. */
@@ -55,4 +56,4 @@
 #include "hal/hal_can_native.h"
 #endif
 
-#define PCD_CAN_VERSION "0.5.0"
+#define PCD_CAN_VERSION "0.6.0"

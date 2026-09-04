@@ -251,6 +251,26 @@ void test_gateway_registry_discovers_node_resources(void) {
     TEST_ASSERT_EQUAL_UINT32(12, found->uptime_s);
 }
 
+void test_gateway_registry_expires_silent_nodes(void) {
+    VirtualBus wire;
+    NativeCanBus bus(&wire);
+    CanNode node(bus, 0x0001);
+    node.begin();
+    RouteTable table;
+    Gateway gateway(node, table);
+    GatewayConfig config;
+    gateway.begin(config);
+
+    gateway.onCanFrame(makeHeartbeat(0x0016, 1, 0));
+    gateway.poll(CAN_HEARTBEAT_PERIOD_MS);
+    const DiscoveredNode *found = gateway.nodes().find(0x0016);
+    TEST_ASSERT_NOT_NULL(found);
+    TEST_ASSERT_TRUE(found->online);
+
+    gateway.poll(CAN_HEARTBEAT_PERIOD_MS * 4UL);
+    TEST_ASSERT_FALSE(found->online);
+}
+
 void test_mqtt_bridge_parses_incoming_command() {
     struct MockMqttTransport : public IMqttTransport {
         static bool publishFn(const char *, const uint8_t *, size_t, bool) { return true; }
@@ -345,6 +365,7 @@ int main(int, char **) {
     RUN_TEST(test_routing_engine_routes_to_sink_non_can);
     RUN_TEST(test_gateway_attach_bridge);
     RUN_TEST(test_gateway_registry_discovers_node_resources);
+    RUN_TEST(test_gateway_registry_expires_silent_nodes);
     RUN_TEST(test_mqtt_bridge_parses_incoming_command);
     RUN_TEST(test_modbus_bridge_translates_can_to_registers);
     return UNITY_END();

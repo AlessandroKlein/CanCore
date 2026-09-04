@@ -1,6 +1,6 @@
 # Wiki del ecosistema CAN descentralizado (PCD v1)
 
-Documentacion completa del proyecto `canbus_ecosistema_v5` (version 0.5.0).
+Documentacion completa del proyecto `canbus_ecosistema_v5` (version 0.6.0).
 
 | # | Seccion | Contenido |
 |---|---------|-----------|
@@ -15,6 +15,7 @@ Documentacion completa del proyecto `canbus_ecosistema_v5` (version 0.5.0).
 | 9 | [Implementacion web del gateway](../web-gateway.md) | paginas, API HTTP, seguridad y ejemplos |
 | 10 | [Guia de implementacion en proyectos](../guia-implementacion-proyectos.md) | PlatformIO, Arduino IDE, nodos y gateways |
 | 11 | [Puentes bidireccionales](../puentes-bidireccionales.md) | Matter, Zigbee, MQTT, ESPHome, ESP-NOW, Modbus, Ethernet y TFT |
+| 12 | [Futuras mejoras](../../FUTURE_IMPROVEMENTS.md) | seguridad, OTA, interoperabilidad y criterio para 1.0.0 |
 
 ## Estado de la implementacion
 
@@ -41,11 +42,14 @@ Lo que **si** existe hoy ademas del nucleo:
 - `udp_tunnel_transport`: cola de datagramas de referencia.
 - `ota_manager`: emisor de imagenes OTA por CAN con CRC global.
 - `web/web_pages`: UI HTML/CSS/JS agnostica para el gateway.
+- `NodeRegistry`: inventario con expiracion por heartbeat.
+- `TunnelRelayGuard`: anti-loop y deduplicacion por segmento.
 - `MSG_DISCOVERY`: anuncio de identidad, modo de ID y recursos por canal.
 - Identidad manual/automatica persistente y filtros de escucha configurables
   por CAN o por la API web del gateway.
 - Ejemplos Arduino IDE en `examples/` para nodo, reglas, identidad,
   descubrimiento/filtros, gateway web, puentes bidireccionales y pantallas.
+- `CanLanBridgeGateway`: dos redes CAN por LAN con configuracion web en cada gateway.
 - `docs/puentes-bidireccionales.md`: matriz de integracion y futuras mejoras.
 
 Todavia queda fuera del nucleo: adaptadores concretos WiFi/Ethernet/MQTT/KNX/
