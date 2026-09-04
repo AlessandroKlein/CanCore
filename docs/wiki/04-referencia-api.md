@@ -252,3 +252,113 @@ uint16_t frameFlags(const CanFrame &frame);
 uint32_t frameParam(const CanFrame &frame);
 uint16_t crc16(const uint8_t *data, uint16_t length, uint16_t seed = 0xFFFF);
 ```
+
+## 4.8 Capa de servicios del sistema (`system_api`)
+
+El nucleo **no** llama a `millis()`, `delay()` ni `Serial` de forma directa.
+La aplicacion inyecta estos servicios una vez, tipicamente en `setup()`:
+
+```cpp
+struct pcd::SystemApi {
+    uint32_t (*millis)();                          // reloj monotono en ms
+    void     (*delay_ms)(uint32_t ms);             // bloqueo en ms
+    void     (*log)(uint8_t level, const char *fmt, va_list args);
+    void     (*lock)();                            // entrar en seccion critica
+    void     (*unlock)();                          // salir de seccion critica
+};
+
+void pcd::setSystemApi(const pcd::SystemApi *api);  // instalar
+const pcd::SystemApi *pcd::systemApi();             // consultar
+uint32_t pcd::systemMillis();                       // acceso corto
+void     pcd::systemDelay(uint32_t ms);
+```
+
+Mapeo tipico por plataforma:
+
+| Plataforma | `millis` | `delay_ms` | `log` |
+|-----------|----------|------------|-------|
+| Arduino | `millis` | `delay` | `vsnprintf` + `Serial.printf` |
+| ESP-IDF | `esp_timer_get_time()/1000` | `vTaskDelay(pdMS_TO_TICKS(ms))` | `ESP_LOGI` / `ESP_LOGV` |
+| FreeRTOS | `xTaskGetTickCount()` | `vTaskDelay(pdMS_TO_TICKS(ms))` | `printf` personalizado |
+| STM32 Cube | `HAL_GetTick()` | `HAL_Delay()` | `printf` redirigido |
+| PC / native | `std::chrono` | `std::this_thread::sleep_for` | `std::printf` |
+
+### Motor de registro inyectable
+
+Los macros `LOG_ERROR` / `LOG_INFO` / `LOG_DEBUG` se enrutan al sumidero
+`SystemApi::log`. Con `CAN_LOG_LEVEL=0` el compilador elimina todas las cadenas.
+
+### LockGuard
+
+```cpp
+{
+    pcd::LockGuard lock;      // entra en seccion critica
+    // ... cola, EEPROM, tabla ...
+}                             // sale automaticamente
+```
+
+Prioridad: si `SystemApi` provee `lock()/unlock()` se usan (semaforo/critical
+section). En AVR sin inyeccion cae a `cli()/sei()`. En bare-metal single-thread
+no hace nada.
+
+## 4.9 Bucle de eventos asincrono
+
+Desacopla la ISR del procesamiento en el hilo principal:
+
+```cpp
+pcd::CanEventLoop loop;
+loop.attach(myFrameProcessor, nullptr);
+
+// desde la ISR del controlador CAN:
+loop.enqueue(frame);          // ~µs, solo copia
+
+// desde el loop() principal:
+loop.tick();                   // drena la cola y llama a process(frame, ctx)
+```
+
+Tambien esta `RingBuffer<T, Capacity>`, un buffer SPSC lock-free que usa
+`CanEventLoop` internamente.
+
+## 4.10 `CanNodeTmpl<RxDepth>`
+
+Nodo con buffer de RX dimensionado en tiempo de compilacion:
+
+```cpp
+pcd::CanNodeTmpl<4>  node(bus, 0x0016);   // ATmega328P
+pcd::CanNodeTmpl<64> gateway(bus, 0x0001); // ESP32 gateway
+```
+
+Expone la misma interfaz que `CanNode` mas:
+
+```cpp
+bool enqueueFrame(const CanFrame &frame);  // desde ISR
+void poll(uint32_t now_ms);                // drena el ring buffer, luego service
+size_t pendingFrames() const;
+```
+
+## 4.11 Tunel CAN sobre IP (`TunnelEngine`)
+
+```cpp
+class pcd::ITunnelTransport {
+    virtual bool send(uint16_t peer, const uint8_t *data, size_t len) = 0;
+    virtual bool receive(uint16_t &peer_out, uint8_t *data, size_t max_len, size_t &len) = 0;
+    virtual bool available() const = 0;
+};
+
+pcd::TunnelEngine tunnel(transport);
+bool tunnel.sendFrame(uint16_t peer, const pcd::CanFrame &frame);
+bool tunnel.receiveFrame(uint16_t &peer_out, pcd::CanFrame &frame);
+```
+
+Formato del datagrama (16 bytes, little-endian):
+
+```text
+[0]    magia 0xA5
+[1..4] ID 29-bit, LSB primero
+[5]    DLC
+[6..13] payload (8 bytes)
+[14..15] CRC-16 de los bytes 0..13
+```
+
+El transporte de red (UDP/TCP/WiFi/Ethernet) **no** viene con la libreria; lo
+implementa la aplicacion (ver `docs/wiki/08-librerias-recomendadas.md`).

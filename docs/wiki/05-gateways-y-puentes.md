@@ -1,9 +1,9 @@
 # 5. Enrutamiento, gateways y puentes
 
-> **Estado: diseno.** Los puentes descritos en esta seccion todavia **no estan
-> implementados** en el repositorio. Se documenta el contrato acordado para que
-> la implementacion no cambie el protocolo del bus. Lo que si existe hoy es
-> `CanNode::onAnyFrame()`, el punto de enganche sobre el que se construiran.
+> **Estado: implementacion base disponible.** El repositorio ya incluye routing,
+> gateway, puentes MQTT/Modbus, codec de tunel, transporte UDP de referencia,
+> OTA emisor y recursos web. Los adaptadores concretos de red y HTTP siguen
+> perteneciendo al proyecto de firmware.
 
 ## 5.1 Que es un gateway aqui
 
@@ -46,13 +46,62 @@ pcd/<node_id>/status                      <- online/offline segun heartbeat
 
 Une dos segmentos CAN fisicamente separados, o expone el bus a un PC.
 
-- Encapsulado propuesto: `[id 4 bytes BE][dlc 1][data 0..8]`, un datagrama por
-  trama.
-- UDP para baja latencia dentro de la LAN; TCP cuando hace falta entrega fiable.
-- Filtro por tipo de mensaje y por prioridad para no inundar la red con
-  telemetria.
-- Proteccion contra bucles: cada trama reenviada lleva la marca del segmento de
-  origen y no se devuelve a el.
+### Contrato agnostico
+
+Ya existe en la libreria un **codec** CAN-sobre-IP:
+
+- `tunnel/tunnel_engine.h`: `TunnelEngine` que serializa cada trama en un
+  datagrama de 16 bytes (magia `0xA5` + ID de 29 bits LSB + DLC + payload +
+  CRC-16) y lo deserializa validando magia/DLC/CRC.
+- `tunnel/tunnel_transport.h`: `ITunnelTransport` — interfaz de 3 metodos
+  (`send`, `receive`, `available`) que la aplicacion implementa con su stack de
+  red preferido (WiFiUdp, W5500, LwIP, AsyncTCP...).
+
+Diagrama:
+
+```
+[Bus CAN local] -> TunnelEngine -> ITunnelTransport  -> red (lan/WiFi)
+[red]           -> ITunnelTransport -> TunnelEngine -> [Bus CAN local]
+```
+
+### Responsabilidades del gateway
+
+- **Transporte**: `UdpTunnelTransport` sirve como cola de referencia; para red
+  real el usuario implementa `ITunnelTransport` con `WiFiUdp.h`, Ethernet o TCP.
+- **Filtro**: se recomienda filtrar por tipo de mensaje y prioridad antes de
+  reenviar para no inundar la red con telemetria.
+- **Anti-bucle**: cada trama reenviada lleva la marca del segmento de origen y
+  no se devuelve a el.
+- **UDP** para baja latencia dentro de la LAN; **TCP** cuando hace falta entrega
+  fiable.
+
+### Ejemplo minimo
+
+```cpp
+#include <PCD_CAN.h>
+
+// ... implementar pcd::ITunnelTransport (ver wiki 8.5) ...
+MyUdpTransport transport(8888);
+pcd::TunnelEngine tunnel(transport);
+
+void setup() {
+    transport.begin();
+}
+
+void loop() {
+    node.poll(millis());
+
+    // recepcion de la red -> inyectar al bus local
+    pcd::CanFrame frame;
+    uint16_t from_peer;
+    if (tunnel.receiveFrame(from_peer, frame)) {
+        node.handleFrame(frame);
+    }
+
+    // trafico del bus -> reenviar a la red
+    // (se hace dentro de onAnyFrame() con tunnel.sendFrame(peer, frame))
+}
+```
 
 ## 5.5 Puente CAN <-> Modbus RTU / TCP
 
@@ -70,8 +119,12 @@ Para integrar PLCs y SCADA existentes.
 
 ## 5.6 Interfaz web y OTA del gateway
 
-- Servidor HTTP en el ESP32 para inventario de nodos (a partir de heartbeats),
-  estado en vivo, edicion de reglas por SDO y disparo de campanas OTA.
+- `web/web_pages.{h,cpp}` entrega una aplicacion HTML con vistas de inventario,
+  rutas, OTA, tunel, diagnostico y ajustes.
+- `docs/web-gateway.md` define los endpoints JSON y muestra integraciones con
+  `WebServer.h` y `ESPAsyncWebServer`.
+- El servidor HTTP en el ESP32 debe agregar autenticacion, inventario de nodos
+  a partir de heartbeats, edicion de reglas por SDO y disparo de campanas OTA.
 - WebSocket para el estado en tiempo real.
 - OTA WiFi del propio gateway con `Update.h`, independiente del OTA por CAN de
   la seccion 6.

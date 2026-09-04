@@ -21,6 +21,11 @@ canbus_ecosistema_v5/
 │   ├── hal/hal_can_esp32.*   driver TWAI
 │   ├── hal/hal_can_mcp2515.* driver MCP2515 por SPI
 │   ├── hal/hal_can_native.*  bus virtual para escritorio
+│   ├── ota_manager.{h,cpp}  emisor OTA por CAN
+│   ├── web/web_pages.{h,cpp} UI HTML agnostica del gateway
+│   ├── routing/              tabla y motor de rutas
+│   ├── bridge/               bridges MQTT y Modbus
+│   ├── gateway/              composicion de nodo + rutas + bridges
 │   └── main.cpp              firmware de referencia (solo PlatformIO)
 ├── examples/                 sketches .ino para Arduino IDE
 ├── test/                     pruebas unitarias Unity
@@ -74,7 +79,7 @@ Entornos definidos en `platformio.ini`:
 Comandos habituales:
 
 ```bash
-pio test -e native                 # pruebas unitarias (32 casos)
+pio test -e native                 # pruebas unitarias (53 casos)
 pio run -e esp32_gateway           # compilar el gateway
 pio run -e atmega328p_node -t upload
 pio device monitor -b 115200
@@ -99,7 +104,7 @@ Definidas en `system_config.h` y sobreescribibles desde `build_flags`:
 | `CAN_MAX_CHANNELS` | = suscripciones | Canales locales del nodo |
 | `CAN_MAX_RULES` | 12 | Reglas de vinculacion persistentes |
 | `PCD_BUILD_FIRMWARE` | - | Habilita `src/main.cpp` |
-| `FEATURE_*` | 0 | Perfiles del gateway (aun no implementados) |
+| `FEATURE_*` | 0 | Perfiles de gateway; activan integraciones en el firmware |
 
 En ATmega328P conviene reducir las tablas; el entorno `atmega328p_node` ya usa
 8 suscripciones, 8 canales y 8 reglas.
@@ -119,7 +124,25 @@ pcd::CanNode sensor(bus_a, 0x0005);
 pcd::CanNode actuador(bus_b, 0x0016);
 ```
 
-## 3.6 Consumo actual de recursos
+## 3.6 Reglas de empaquetado y compatibilidad
+
+- `PCD_CAN.h` es la unica cabecera publica recomendada.
+- `library.properties` permite instalar por ZIP en Arduino IDE y no arrastra
+   librerias de red ni JSON.
+- `library.json` incluye `system`, `tunnel`, `routing`, `bridge`, `gateway`,
+   `web` y `hal`, y excluye `main.cpp` como fuente de libreria.
+- El codigo comun usa C++11 y no incluye `Arduino.h`; los HAL concretos solo se
+   compilan cuando la plataforma correspondiente esta definida.
+- La UI web debe reservarse para el gateway ESP32; los nodos AVR no necesitan
+   incluirla en su firmware.
+
+La validacion disponible en este entorno es `pio test -e native` y cubre 53
+casos. `arduino-cli` no esta instalado aqui, por lo que la compatibilidad con
+Arduino IDE se corrobora mediante los metadatos, includes y estructura de
+libreria; antes de publicar una release conviene ejecutar un sketch minimo en
+el IDE con la placa objetivo.
+
+## 3.7 Consumo actual de recursos
 
 Medido con `pio run` sobre el firmware de referencia:
 

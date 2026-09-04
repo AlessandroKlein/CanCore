@@ -1,6 +1,6 @@
 {
   "name": "PCD_CAN",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Protocolo descentralizado punto a punto sobre CAN Bus 2.0B (29 bits) para ecosistemas domoticos e industriales: recursos direccionables por nodo, reglas de vinculacion persistentes y drivers TWAI (ESP32) y MCP2515 (AVR).",
   "keywords": ["can", "canbus", "mcp2515", "twai", "esp32", "avr", "domotica", "modbus"],
   "repository": {
@@ -27,6 +27,10 @@
       "+<*.cpp>",
       "+<system/*.cpp>",
       "+<tunnel/*.cpp>",
+      "+<routing/*.cpp>",
+      "+<bridge/*.cpp>",
+      "+<gateway/*.cpp>",
+      "+<web/*.cpp>",
       "+<hal/*.cpp>",
       "-<main.cpp>"
     ]

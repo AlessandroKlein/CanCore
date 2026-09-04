@@ -32,10 +32,23 @@
 /* Motor de tunel CAN sobre IP (Data Stream Transport). */
 #include "tunnel/tunnel_transport.h"
 #include "tunnel/tunnel_engine.h"
+#include "tunnel/udp_tunnel_transport.h"
+#include "ota_manager.h"
+
+/* Recursos HTML agnosticos para la interfaz del gateway. */
+#include "web/web_pages.h"
+
+/* Motor de enrutamiento multi-protocolo y puentes. */
+#include "routing/canonical.h"
+#include "routing/route_table.h"
+#include "routing/routing_engine.h"
+#include "bridge/bridge.h"
+#include "bridge/bridge_mqtt.h"
+#include "bridge/bridge_modbus.h"
+#include "gateway/gateway.h"
 
 #if defined(ARDUINO_ARCH_ESP32)
 #include "hal/hal_can_esp32.h"
-#include "tunnel/tunnel_udp_esp32.h"
 #elif defined(__AVR__)
 #include "hal/hal_can_mcp2515.h"
 #else

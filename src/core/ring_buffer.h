@@ -23,44 +23,50 @@ namespace pcd {
 template <typename T, size_t Capacity>
 class RingBuffer {
   public:
-    RingBuffer() : head_(0), tail_(0) {}
+    RingBuffer() : head_(0), tail_(0), count_(0) {}
 
     bool push(const T &item) {
-        const size_t next = (head_ + 1) % Capacity;
-        if (next == tail_) {
-            return false;  // lleno
+        if (count_ >= kEffectiveCapacity) {
+            return false;  // lleno (se reserva una celda para distinguir vacio de lleno)
         }
         buffer_[head_] = item;
         /* Barrera de compilador: el item queda escrito antes de que avance
          * el indice. En un CPU multinucleo real el usuario debe usar una
          * barrera de memoria de hardware (o lock()) en push/pop. */
         __asm__ __volatile__("" ::: "memory");
-        head_ = next;
+        head_ = (head_ + 1) % Capacity;
+        ++count_;
         return true;
     }
 
     bool pop(T &item) {
-        if (tail_ == head_) {
+        if (count_ == 0) {
             return false;  // vacio
         }
         item = buffer_[tail_];
         __asm__ __volatile__("" ::: "memory");
         tail_ = (tail_ + 1) % Capacity;
+        --count_;
         return true;
     }
 
-    size_t count() const { return (head_ - tail_ + Capacity) % Capacity; }
-    bool empty() const { return tail_ == head_; }
-    bool full() const { return ((head_ + 1) % Capacity) == tail_; }
+    size_t count() const { return count_; }
+    bool empty() const { return count_ == 0; }
+    bool full() const { return count_ >= kEffectiveCapacity; }
 
     /* Descartar todos los elementos pendientes (por ejemplo tras bus-off). */
     void clear() {
-        tail_ = head_;
+        head_ = 0;
+        tail_ = 0;
+        count_ = 0;
     }
 
   private:
+    static const size_t kEffectiveCapacity = (Capacity > 0) ? (Capacity - 1) : 0;
+
     volatile size_t head_;
     volatile size_t tail_;
+    size_t count_;
     T buffer_[Capacity];
 };
 

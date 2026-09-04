@@ -1,10 +1,10 @@
 # 6. Actualizaciones OTA por CAN
 
-> **Estado: diseno.** El gestor OTA y el bootloader CAN **no estan implementados**
-> todavia. Lo unico existente en el codigo son las constantes del protocolo
-> (`MSG_OTA`, `OtaCommand`) y el constructor `makeOtaData()`. Esta seccion fija el
-> contrato para que el firmware del bootloader y el del gateway se desarrollen
-> por separado sin ambiguedades.
+> **Estado: emisor implementado.** El `OtaManager` del gateway valida la imagen,
+> calcula el CRC global y genera bloques `makeOtaData()` de 7 bytes. El bootloader
+> CAN receptor, las ventanas ACK y la escritura de flash siguen pendientes.
+> Esta seccion fija el contrato para que ambos lados se desarrollen sin
+> ambiguedades.
 
 ## 6.1 Por que OTA sobre CAN
 

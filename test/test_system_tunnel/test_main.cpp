@@ -7,6 +7,7 @@
  * UDP con checksum.
  */
 
+#include <cstring>
 #include <unity.h>
 
 #include "PCD_CAN.h"
@@ -140,7 +141,7 @@ void test_ring_buffer_push_pop(void) {
     TEST_ASSERT_TRUE(buf.push(1));
     TEST_ASSERT_TRUE(buf.push(2));
     TEST_ASSERT_TRUE(buf.push(3));
-    TEST_ASSERT_FALSE(buf.full());  /* reserva una casilla */
+    TEST_ASSERT_TRUE(buf.full());  /* reserva una casilla */
     TEST_ASSERT_EQUAL_UINT(3, buf.count());
 
     int value = 0;
@@ -271,6 +272,95 @@ void test_tunnel_engine_send_receive(void) {
     TEST_ASSERT_EQUAL_UINT8(frame.data[2], received.data[2]);
 }
 
+void test_udp_tunnel_transport_queue_and_dispatch(void) {
+    UdpTunnelTransport transport;
+
+    const uint8_t payload[kTunnelDatagramBytes] = {
+        0xA5, 0x05, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34,
+        0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x00, 0x00,
+    };
+
+    TEST_ASSERT_TRUE(transport.enqueue(0x0022, payload, sizeof(payload)));
+    TEST_ASSERT_TRUE(transport.available());
+
+    uint16_t peer = 0;
+    uint8_t out[kTunnelDatagramBytes] = {0};
+    size_t len = 0;
+    TEST_ASSERT_TRUE(transport.receive(peer, out, sizeof(out), len));
+    TEST_ASSERT_EQUAL_UINT16(0x0022, peer);
+    TEST_ASSERT_EQUAL_UINT(sizeof(payload), len);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(payload, out, sizeof(payload));
+    TEST_ASSERT_FALSE(transport.available());
+
+    const uint8_t reply[kTunnelDatagramBytes] = {0xAA, 0xBB, 0xCC, 0xDD};
+    TEST_ASSERT_TRUE(transport.send(0x0044, reply, sizeof(reply)));
+}
+
+void test_ota_manager_streams_image_and_crc(void) {
+    uint8_t image[15];
+    for (uint8_t i = 0; i < sizeof(image); ++i) {
+        image[i] = static_cast<uint8_t>(i + 1);
+    }
+
+    OtaManager manager(0x0001, 0x16);
+    TEST_ASSERT_TRUE(manager.begin(image, sizeof(image)));
+    TEST_ASSERT_TRUE(manager.active());
+    TEST_ASSERT_EQUAL_UINT(3, manager.frameCount());
+    TEST_ASSERT_EQUAL_UINT16(crc16(image, sizeof(image)), manager.imageCrc());
+
+    CanFrame first;
+    CanFrame second;
+    CanFrame third;
+    TEST_ASSERT_TRUE(manager.nextFrame(first));
+    TEST_ASSERT_TRUE(manager.nextFrame(second));
+    TEST_ASSERT_TRUE(manager.nextFrame(third));
+    TEST_ASSERT_FALSE(manager.nextFrame(first));
+    TEST_ASSERT_TRUE(manager.complete());
+    TEST_ASSERT_EQUAL_UINT(15, manager.bytesSent());
+
+    TEST_ASSERT_EQUAL_UINT8(0, first.data[0]);
+    TEST_ASSERT_EQUAL_UINT8(7, first.dlc - 1);
+    TEST_ASSERT_EQUAL_UINT8(1, second.data[0]);
+    TEST_ASSERT_EQUAL_UINT8(7, second.dlc - 1);
+    TEST_ASSERT_EQUAL_UINT8(2, third.data[0]);
+    TEST_ASSERT_EQUAL_UINT8(1, third.dlc - 1);
+    TEST_ASSERT_EQUAL_UINT8(image[14], third.data[1]);
+}
+
+void test_ota_manager_rejects_invalid_image_and_can_abort(void) {
+    uint8_t image[OtaManager::kMaxImageBytes + 1] = {0};
+    OtaManager manager(0x0001, 0x16);
+
+    TEST_ASSERT_FALSE(manager.begin(0, 1));
+    TEST_ASSERT_FALSE(manager.begin(image, sizeof(image)));
+    TEST_ASSERT_FALSE(manager.active());
+
+    const uint8_t small_image[1] = {0xAA};
+    TEST_ASSERT_TRUE(manager.begin(small_image, sizeof(small_image)));
+    manager.abort();
+    TEST_ASSERT_FALSE(manager.active());
+    TEST_ASSERT_EQUAL_UINT8(OTA_STATE_ABORTED, manager.state());
+    CanFrame frame;
+    TEST_ASSERT_FALSE(manager.nextFrame(frame));
+}
+
+void test_web_pages_expose_gateway_views(void) {
+    const char *html = webAppHtml();
+    TEST_ASSERT_NOT_NULL(html);
+    TEST_ASSERT_NOT_NULL(strstr(html, "Resumen del gateway"));
+    TEST_ASSERT_NOT_NULL(strstr(html, "Nodos del bus"));
+    TEST_ASSERT_NOT_NULL(strstr(html, "Tabla de rutas"));
+    TEST_ASSERT_NOT_NULL(strstr(html, "Actualizacion OTA por CAN"));
+    TEST_ASSERT_NOT_NULL(strstr(html, "Tunel CAN sobre IP"));
+    TEST_ASSERT_NOT_NULL(strstr(html, "Diagnostico"));
+    TEST_ASSERT_NOT_NULL(strstr(html, "Ajustes del gateway"));
+
+    TEST_ASSERT_EQUAL_STRING("/", webViewPath(WEB_VIEW_DASHBOARD));
+    TEST_ASSERT_EQUAL_STRING("/#ota", webViewPath(WEB_VIEW_OTA));
+    TEST_ASSERT_EQUAL_STRING("OTA", webViewName(WEB_VIEW_OTA));
+    TEST_ASSERT_EQUAL_UINT8(WEB_VIEW_COUNT, 7);
+}
+
 int main(int, char **) {
     UNITY_BEGIN();
     RUN_TEST(test_set_system_api);
@@ -281,6 +371,10 @@ int main(int, char **) {
     RUN_TEST(test_tunnel_rejects_bad_magic);
     RUN_TEST(test_tunnel_rejects_bad_crc);
     RUN_TEST(test_tunnel_engine_send_receive);
+    RUN_TEST(test_udp_tunnel_transport_queue_and_dispatch);
+    RUN_TEST(test_ota_manager_streams_image_and_crc);
+    RUN_TEST(test_ota_manager_rejects_invalid_image_and_can_abort);
+    RUN_TEST(test_web_pages_expose_gateway_views);
     return UNITY_END();
 }
 

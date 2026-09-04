@@ -4,7 +4,9 @@ Ecosistema domótico e industrial **descentralizado** sobre CAN Bus 2.0B (29 bit
 
 Este repositorio contiene la **librería de comunicación** (PCD v1): protocolo, capa de abstracción de hardware, capa de nodo, gestión de recursos, persistencia y reglas descentralizadas. Los puentes (MQTT, túnel UDP, Modbus), el servidor web y el OTA se construyen sobre esta base.
 
-Documentación completa en [`docs/wiki`](docs/wiki/README.md).
+Documentación completa en [`docs/wiki`](docs/wiki/README.md), con la guía de
+implementación en [`docs/guia-implementacion-proyectos.md`](docs/guia-implementacion-proyectos.md)
+y la integración web en [`docs/web-gateway.md`](docs/web-gateway.md).
 
 ## Estado
 
@@ -21,9 +23,14 @@ Documentación completa en [`docs/wiki`](docs/wiki/README.md).
 | `system_lock` — LockGuard (cli/sei, RTOS o inyectado) | implementado |
 | `core/ring_buffer` — búfer SPSC lock-free para ISR | implementado |
 | `core/event_loop` — desacople ISR → main-loop | implementado |
-| `tunnel` — motor CAN-sobre-IP + transporte UDP ESP32 | implementado |
+| `tunnel` — códec CAN-sobre-IP agnóstico (`TunnelEngine` + `ITunnelTransport`) | implementado |
 | `can_node_tmpl` — plantilla con búfer de RX en tiempo de compilación | implementado |
-| `ota_manager`, servidor web, puentes MQTT/Modbus, backend STM32 | pendientes |
+| `routing` / `gateway` — tabla y composición de bridges | implementado y testeado |
+| `bridge_mqtt` / `bridge_modbus` | implementado y testeado |
+| `udp_tunnel_transport` | implementado y testeado |
+| `ota_manager` — emisor OTA por CAN | implementado y testeado |
+| `web/web_pages` — UI HTML agnóstica para gateway | implementado y testeado |
+| bootloader OTA receptor, HTTP concreto y backend STM32 | pendientes en proyectos de firmware |
 
 ## Protocolo PCD v1
 
@@ -88,7 +95,7 @@ node.sendCommand(0x16, pcd::RES_RELAY, 0x01, pcd::ACT_TOGGLE);
 ## Entornos de compilación
 
 ```bash
-pio test -e native            # 32 pruebas unitarias del protocolo, del nodo y de las reglas
+pio test -e native            # suite unitaria completa (53 casos)
 pio run -e esp32_gateway      # gateway / puente multiprotocolo (TWAI)
 pio run -e esp32_hmi          # pantalla táctil CAN
 pio run -e atmega2560_node    # nodo de campo de alta densidad (MCP2515)
@@ -153,17 +160,28 @@ conecta su red (WiFi, Ethernet W5500, LwIP...) y el `TunnelEngine` empaqueta cad
 Red del Usuario --bytes--> TunnelEngine --> Bus CAN
 ```
 
-En ESP32, `UdpTunnelTransport` permite P2P entre Gateways:
+La librería incluye `UdpTunnelTransport` como cola de referencia para pruebas,
+pero no acopla `WiFiUdp.h` ni otro driver de red. El proyecto de gateway adapta
+el stack elegido a `ITunnelTransport` (ver `docs/wiki/08-librerias-recomendadas.md`):
 
 ```cpp
 #include <PCD_CAN.h>
-pcd::UdpTunnelTransport udp(8888);
-pcd::TunnelEngine tunnel(udp);
 
-udp.begin();
-udp.addPeer(1, "192.168.1.50", 8888);
-// tunnel.sendFrame(1, frame);   // enruta al bus remoto
+// ... implementar pcd::ITunnelTransport con WiFiUdp, Ethernet o TCP ...
+MyUdpTransport transport;
+pcd::TunnelEngine tunnel(transport);
+
+transport.begin();
+tunnel.sendFrame(1, frame);   // enruta al bus remoto
 ```
+
+### OTA y web del gateway
+
+`OtaManager` genera bloques compatibles con `makeOtaData()` y calcula el CRC-16
+global. `webAppHtml()` entrega una UI de referencia con vistas de resumen,
+nodos, rutas, OTA, túnel, diagnóstico y ajustes. El servidor HTTP, el filesystem
+y la autenticación son responsabilidad del proyecto ESP32; ver
+`docs/web-gateway.md`.
 
 ### Configuración
 

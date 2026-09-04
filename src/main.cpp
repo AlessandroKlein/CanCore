@@ -49,6 +49,10 @@ bool g_last_button = true;
 
 pcd::SystemApi g_system_api;
 
+uint32_t systemMillis() {
+    return static_cast<uint32_t>(millis());
+}
+
 #if CAN_LOG_LEVEL > 0
 void logSink(uint8_t level, const char *format, va_list args) {
     char buf[128];
@@ -58,7 +62,7 @@ void logSink(uint8_t level, const char *format, va_list args) {
 #endif
 
 void setupSystemApi() {
-    g_system_api.millis = millis;
+    g_system_api.millis = systemMillis;
     g_system_api.delay_ms = [](uint32_t ms) { delay(ms); };
 #if CAN_LOG_LEVEL > 0
     g_system_api.log = logSink;
