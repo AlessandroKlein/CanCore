@@ -1,6 +1,6 @@
 # Wiki del ecosistema CAN descentralizado (PCD v1)
 
-Documentacion completa del proyecto `canbus_ecosistema_v5` (version 0.4.0).
+Documentacion completa del proyecto `canbus_ecosistema_v5` (version 0.5.0).
 
 | # | Seccion | Contenido |
 |---|---------|-----------|
@@ -10,10 +10,11 @@ Documentacion completa del proyecto `canbus_ecosistema_v5` (version 0.4.0).
 | 4 | [Referencia de API](04-referencia-api.md) | `CanNode`, `DeviceManager`, `ConfigStore`, `RuleEngine`, HAL |
 | 5 | [Enrutamiento, gateways y puentes](05-gateways-y-puentes.md) | routing, MQTT, Modbus, tunel UDP/TCP y web |
 | 6 | [Actualizaciones OTA por CAN](06-ota-por-can.md) | emisor OTA, manifiesto, segmentacion, ventanas y ACK |
-| 9 | [Implementacion web del gateway](../web-gateway.md) | paginas, API HTTP, seguridad y ejemplos |
-| 10 | [Guia de implementacion en proyectos](../guia-implementacion-proyectos.md) | PlatformIO, Arduino IDE, nodos y gateways |
 | 7 | [Diagnostico y FAQ](07-diagnostico-y-faq.md) | 60 ohm, bus-off, error frames, herramientas, preguntas frecuentes |
 | 8 | [Librerias companeras recomendadas](08-librerias-recomendadas.md) | Que hace / que NO hace la libreria, Arduino IDE + PlatformIO, WiFiUdp, ESP-NOW, KNX, Modbus, MQTT, Web GUI |
+| 9 | [Implementacion web del gateway](../web-gateway.md) | paginas, API HTTP, seguridad y ejemplos |
+| 10 | [Guia de implementacion en proyectos](../guia-implementacion-proyectos.md) | PlatformIO, Arduino IDE, nodos y gateways |
+| 11 | [Puentes bidireccionales](../puentes-bidireccionales.md) | Matter, Zigbee, MQTT, ESPHome, ESP-NOW, Modbus, Ethernet y TFT |
 
 ## Estado de la implementacion
 
@@ -44,7 +45,8 @@ Lo que **si** existe hoy ademas del nucleo:
 - Identidad manual/automatica persistente y filtros de escucha configurables
   por CAN o por la API web del gateway.
 - Ejemplos Arduino IDE en `examples/` para nodo, reglas, identidad,
-  descubrimiento/filtros y gateway web.
+  descubrimiento/filtros, gateway web, puentes bidireccionales y pantallas.
+- `docs/puentes-bidireccionales.md`: matriz de integracion y futuras mejoras.
 
 Todavia queda fuera del nucleo: adaptadores concretos WiFi/Ethernet/MQTT/KNX/
 ESP-NOW, bootloader OTA CAN receptor, servidor HTTP y backend STM32. Se

@@ -1,6 +1,6 @@
 # Guia de implementacion en proyectos
 
-Esta guia separa el nucleo `PCD_CAN` del firmware que lo usa. La libreria contiene protocolo, nodos, persistencia, reglas, routing, bridges agnosticos, OTA emisor y recursos HTML. El proyecto final agrega pines, red, credenciales, almacenamiento y servidor.
+Esta guia separa el nucleo `PCD_CAN` del firmware que lo usa. La libreria contiene protocolo, nodos, persistencia, reglas, routing, bridges agnosticos, OTA emisor y recursos HTML. El proyecto final agrega pines, red, credenciales, almacenamiento y servidor. Version documentada: **0.5.0**.
 
 ## 1. Elegir el tipo de proyecto
 
@@ -176,7 +176,35 @@ void loopWeb() {
 
 La UI de `webAppHtml()` presenta estas situaciones: resumen operativo, inventario de nodos, tabla de rutas, OTA por CAN, tunel IP, diagnostico y ajustes. El backend debe implementar los endpoints definidos en `docs/web-gateway.md` y autenticar todas las rutas de escritura.
 
-## 8. Reglas de seguridad
+## 8. Puentes bidireccionales
+
+Los sketches de `examples/` muestran el patron para MQTT, Matter, Zigbee,
+ESPHome, ESP-NOW, Modbus, Ethernet, tunel entre redes y pantallas TFT/SPI.
+Cada uno tiene dos flujos:
+
+```text
+CAN MSG_STATE  -> adaptador -> estado del protocolo externo
+comando externo -> adaptador -> CAN MSG_EVENT -> estado confirmado
+```
+
+El adaptador debe solicitar/recibir `MSG_DISCOVERY`, configurar filtros con
+`addListenFilter()` o `CFG_SUBSCRIBE` y nunca reportar un estado externo como
+confirmado antes de recibir el `MSG_STATE` del nodo. Las dependencias externas
+se agregan únicamente al proyecto del ejemplo, nunca a `library.json` ni a
+`library.properties`.
+
+| Familia | Sketch | Dependencia típica |
+|---|---|---|
+| MQTT | `BridgeMQTTBidireccional` | PubSubClient / AsyncMqttClient |
+| Matter | `BridgeMatterBidireccional` | Matter SDK/core |
+| Zigbee | `BridgeZigbeeBidireccional` | core Zigbee o módulo |
+| ESPHome | `BridgeESPHomeBidireccional` | API nativa o MQTT |
+| ESP-NOW | `BridgeESPNowBidireccional` | esp_now.h |
+| Modbus | `CanBusModbusBidireccional` | ModbusMaster / ArduinoModbus |
+| Ethernet/IP | `CanBusEntreRedes`, `CanBusEthernetBidireccional` | WiFiUDP / Ethernet / TCP |
+| HMI | `PantallaTFTSPI` | TFT_eSPI / LovyanGFX |
+
+## 9. Reglas de seguridad
 
 - No guardar contrasenas, tokens ni claves dentro de `web_pages.cpp`.
 - No exponer el gateway fuera de la LAN sin autenticacion y TLS.
@@ -185,7 +213,7 @@ La UI de `webAppHtml()` presenta estas situaciones: resumen operativo, inventari
 - No ejecutar trabajo pesado dentro de callbacks de ISR o recepcion CAN.
 - No enviar tramas reenviadas de vuelta al mismo segmento sin anti-bucle.
 
-## 9. Checklist de entrega
+## 10. Checklist de entrega
 
 - [ ] `pio test -e native` pasa.
 - [ ] Compila el target de la placa final.

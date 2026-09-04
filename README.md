@@ -1,6 +1,6 @@
 # canbus_ecosistema_v5
 
-Version actual: **0.4.0**.
+Version actual: **0.5.0**.
 
 Ecosistema domótico e industrial **descentralizado** sobre CAN Bus 2.0B (29 bits), según el PRD v5.0 "MASTER".
 
@@ -34,7 +34,7 @@ y la integración web en [`docs/web-gateway.md`](docs/web-gateway.md).
 | `web/web_pages` — UI HTML agnóstica para gateway | implementado y testeado |
 | identidad manual/automática, descubrimiento y filtros CAN | implementado y testeado |
 | `gateway/node_registry` — inventario de nodos y recursos | implementado y testeado |
-| bootloader OTA receptor, HTTP concreto y backend STM32 | pendientes en proyectos de firmware |
+| puentes Matter/Zigbee/ESPHome/ESP-NOW, bootloader OTA receptor, HTTP concreto y backend STM32 | ejemplos y contratos disponibles; integracion final en proyectos de firmware |
 
 ## Protocolo PCD v1
 
@@ -42,7 +42,7 @@ Identificador extendido de 29 bits:
 
 ```
  bits 28..26 (3)   Prioridad   0 crítico · 2 tiempo real · 4 SDO · 6 telemetría · 7 OTA/fondo
- bits 25..21 (5)   Tipo        0x01 heartbeat · 0x02 evento · 0x03 SDO · 0x04 OTA · 0x05 escena · 0x06 estado
+ bits 25..21 (5)   Tipo        0x01 heartbeat · 0x02 evento · 0x03 SDO · 0x04 OTA · 0x05 escena · 0x06 estado · 0x07 discovery
  bits 20..14 (7)   Destino     0x01..0x7E · 0x00 broadcast/grupo
  bits 13..0  (14)  Origen      0x0001..0x3FFF
 ```
@@ -105,7 +105,7 @@ node.sendCommand(0x16, pcd::RES_RELAY, 0x01, pcd::ACT_TOGGLE);
 ## Entornos de compilación
 
 ```bash
-pio test -e native            # suite unitaria completa (53 casos)
+pio test -e native            # suite unitaria completa (57 casos)
 pio run -e esp32_gateway      # gateway / puente multiprotocolo (TWAI)
 pio run -e esp32_hmi          # pantalla táctil CAN
 pio run -e atmega2560_node    # nodo de campo de alta densidad (MCP2515)
@@ -119,6 +119,17 @@ Ejemplos incluidos:
 - `examples/IdentidadManualAutomatica`: selección de ID manual/automático.
 - `examples/DescubrimientoYFiltros`: anuncio de recursos y filtros de escucha.
 - `examples/GatewayWebPCD`: servidor web ESP32 y UI de referencia.
+- `examples/NodoMultiRecursos`: reles, dimmers y entradas multiples.
+- `examples/PantallaTFTSPI`: pantalla TFT/SPI tactil bidireccional.
+- `examples/BridgeMQTTBidireccional`: MQTT <-> CAN.
+- `examples/BridgeMatterBidireccional`: Matter <-> CAN.
+- `examples/BridgeZigbeeBidireccional`: Zigbee <-> CAN.
+- `examples/BridgeESPHomeBidireccional`: ESPHome <-> CAN.
+- `examples/BridgeESPNowBidireccional`: ESP-NOW <-> CAN.
+- `examples/CanBusModbusBidireccional`: Modbus <-> CAN.
+- `examples/CanBusEntreRedes`: CAN <-> UDP/TCP <-> CAN.
+- `examples/CanBusEthernetBidireccional`: CAN <-> Ethernet/W5500.
+- Ver el inventario completo en `examples/README.md`.
 
 El entorno `native` usa `VirtualBus`, un bus CAN en memoria que conecta varios `NativeCanBus`, lo que permite
 validar el ecosistema completo sin hardware.

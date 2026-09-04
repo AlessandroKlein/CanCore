@@ -29,7 +29,29 @@ los anuncios `MSG_DISCOVERY`. Así, al conectar un nuevo elemento el conversor
 puede mostrar su Node-ID, modo manual/automático y cada tipo de recurso con su
 canal, en vez de presentar solo una dirección numérica.
 
-## 5.3 Puente CAN <-> MQTT / Home Assistant
+## 5.3 Regla descentralizada de todos los puentes
+
+Cada nodo conserva el control local, las reglas y la ejecucion de recursos. Un
+puente no es un servidor obligatorio: solo observa estados confirmados y
+traduce comandos externos a `MSG_EVENT`. Si el puente se apaga, los nodos y sus
+automatizaciones siguen funcionando.
+
+El ejemplo de cada tecnologia vive en `examples/` y usa la dependencia externa
+solo en ese proyecto:
+
+| Ejemplo | Direccion | Dependencia elegida por el proyecto |
+|---|---|---|
+| `BridgeMQTTBidireccional` | MQTT <-> CAN | PubSubClient/AsyncMqttClient |
+| `BridgeZigbeeBidireccional` | Zigbee <-> CAN | core Zigbee o modulo externo |
+| `BridgeMatterBidireccional` | Matter <-> CAN | Matter SDK/core ESP32 |
+| `BridgeESPHomeBidireccional` | ESPHome <-> CAN | API nativa o MQTT |
+| `BridgeESPNowBidireccional` | ESP-NOW <-> CAN | esp_now.h |
+| `CanBusModbusBidireccional` | Modbus <-> CAN | ModbusMaster/ArduinoModbus |
+| `CanBusEntreRedes` | CAN <-> UDP/TCP <-> CAN | WiFiUDP/Ethernet/TCP |
+| `CanBusEthernetBidireccional` | Ethernet <-> CAN | Ethernet/W5500 |
+| `PantallaTFTSPI` | TFT/tactil <-> CAN | TFT_eSPI/LovyanGFX |
+
+## 5.4 Puente CAN <-> MQTT / Home Assistant
 
 Estructura de topicos prevista:
 
@@ -47,7 +69,7 @@ pcd/<node_id>/status                      <- online/offline segun heartbeat
   tipo de recurso (rele -> `switch`, dimmer -> `light`, sensor -> `sensor`,
   cortina -> `cover`).
 
-## 5.4 Puente CAN <-> Ethernet / WiFi (tunel UDP-TCP)
+## 5.5 Puente CAN <-> Ethernet / WiFi (tunel UDP-TCP)
 
 Une dos segmentos CAN fisicamente separados, o expone el bus a un PC.
 
@@ -108,7 +130,7 @@ void loop() {
 }
 ```
 
-## 5.5 Puente CAN <-> Modbus RTU / TCP
+## 5.6 Puente CAN <-> Modbus RTU / TCP
 
 Para integrar PLCs y SCADA existentes.
 
@@ -122,7 +144,7 @@ Para integrar PLCs y SCADA existentes.
 - Como **maestro** Modbus RTU, el mismo gateway puede leer medidores existentes y
   publicarlos al bus CAN como telemetria de un recurso virtual.
 
-## 5.6 Interfaz web y OTA del gateway
+## 5.7 Interfaz web y OTA del gateway
 
 - `web/web_pages.{h,cpp}` entrega una aplicacion HTML con vistas de inventario,
   rutas, OTA, tunel, diagnostico y ajustes.
@@ -134,7 +156,7 @@ Para integrar PLCs y SCADA existentes.
 - OTA WiFi del propio gateway con `Update.h`, independiente del OTA por CAN de
   la seccion 6.
 
-## 5.7 Punto de enganche disponible hoy
+## 5.8 Punto de enganche disponible hoy
 
 ```cpp
 void onFrame(const pcd::CanFrame &frame, void *ctx) {

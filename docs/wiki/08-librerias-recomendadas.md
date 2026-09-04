@@ -177,9 +177,9 @@ agnóstico: no necesita `WiFiUdp.h`. Solo se conecta a la interfaz
 
 ---
 
-## 8.7 Roadmap de extensiones de proyecto (no viven en esta librería)
+## 8.7 Ejemplos bidireccionales y roadmap de extensiones
 
-Según el PRD v0.3.0, los siguientes módulos se implementan en **repositorios o
+Los siguientes módulos se implementan en **repositorios o
 proyectos de firmware separados** que **usan** `PCD_CAN`:
 
 - `bridge_espnow` — CAN ↔ ESP-NOW (extensión inalámbrica del bus).
@@ -188,6 +188,11 @@ proyectos de firmware separados** que **usan** `PCD_CAN`:
 - Adaptador MQTT concreto — conecta `bridge_mqtt` con el cliente MQTT elegido.
 - `bridge_ip_tunnel` — conecta `TunnelEngine` con UDP/TCP P2P.
 - `web_server` — sirve `webAppHtml()` y sus endpoints con el servidor HTTP elegido.
+- `matter`, `zigbee`, `esphome` — ver los sketches completos en `examples/`.
+- `tft_spi` — pantalla tactil que escucha estados y emite comandos CAN.
+
+Los ejemplos se mantienen deliberadamente fuera de `src/`: muestran la
+integracion sin convertir a `PCD_CAN` en un contenedor de librerias de terceros.
 
 Todos comparten el mismo punto de anclaje: `CanNode::onAnyFrame()` para observar
 tramas, y `CanNode::sendCommand()` / `applyLocal()` para inyectar comandos.
