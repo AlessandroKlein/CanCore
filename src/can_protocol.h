@@ -57,7 +57,8 @@ enum MsgType : uint8_t {
     MSG_CONFIG = 0x03,     /* SDO: configuracion y vinculacion */
     MSG_OTA = 0x04,
     MSG_GROUP = 0x05,      /* broadcast de grupo / escenas     */
-    MSG_STATE = 0x06       /* respuesta de estado / ACK        */
+    MSG_STATE = 0x06,      /* respuesta de estado / ACK        */
+    MSG_DISCOVERY = 0x07   /* identidad y capacidades del nodo */
 };
 
 enum ResourceType : uint8_t {
@@ -104,7 +105,22 @@ enum ConfigCommand : uint8_t {
     CFG_RULE_CLEAR = 0x06,
     CFG_SAVE = 0x07,
     CFG_RULE_COUNT = 0x08,
-    CFG_ACK = 0x7F
+    CFG_ACK = 0x7F,
+    CFG_SET_NODE_MODE = 0x09,
+    CFG_SUBSCRIBE = 0x0A,
+    CFG_UNSUBSCRIBE = 0x0B,
+    CFG_CLEAR_SUBSCRIPTIONS = 0x0C
+};
+
+enum NodeIdMode : uint8_t {
+    NODE_ID_MANUAL = 0x00,
+    NODE_ID_AUTOMATIC = 0x01
+};
+
+enum DiscoveryCommand : uint8_t {
+    DISCOVERY_REQUEST = 0x01,
+    DISCOVERY_ANNOUNCE = 0x02,
+    DISCOVERY_RESOURCE = 0x03
 };
 
 /* Codigos de resultado devueltos en un CFG_ACK. */
@@ -161,6 +177,7 @@ CanId decodeId(uint32_t raw_id);
 /* Valida rangos de nodo (destino <= 0x7E, origen 0x0001..0x3FFF). */
 bool isValidTarget(uint8_t target);
 bool isValidSource(uint16_t source);
+uint16_t deriveAutomaticNodeId(uint32_t unique_value, uint16_t salt = 0x51A7);
 
 /* ------------------------------------------------------------------ */
 /* Trama completa                                                       */
@@ -203,6 +220,10 @@ CanFrame makeInputEvent(uint16_t source, uint8_t channel, uint8_t event);
 
 /* Heartbeat de nodo: uptime en segundos y estado de salud. */
 CanFrame makeHeartbeat(uint16_t source, uint32_t uptime_s, uint8_t health = 0);
+
+CanFrame makeDiscoveryRequest(uint16_t source, uint8_t target = kBroadcastTarget);
+CanFrame makeDiscoveryAnnounce(uint16_t source, uint8_t id_mode, uint8_t resource_count);
+CanFrame makeDiscoveryResource(uint16_t source, uint8_t resource, uint8_t channel);
 
 /* Trama SDO de configuracion / vinculacion logica. */
 CanFrame makeConfig(uint16_t source, uint8_t target, uint8_t sub_command, const uint8_t *payload,

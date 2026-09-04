@@ -225,6 +225,32 @@ void test_gateway_attach_bridge() {
     TEST_ASSERT_EQUAL_INT(1, process_count);
 }
 
+void test_gateway_registry_discovers_node_resources(void) {
+    VirtualBus wire;
+    NativeCanBus bus(&wire);
+    CanNode node(bus, 0x0016);
+    node.begin();
+    node.registerResource(RES_RELAY, 0x01, relayHandler, 0);
+
+    RouteTable table;
+    Gateway gateway(node, table);
+    GatewayConfig config;
+    gateway.begin(config);
+
+    gateway.onCanFrame(makeDiscoveryAnnounce(0x0016, NODE_ID_AUTOMATIC, 1));
+    gateway.onCanFrame(makeDiscoveryResource(0x0016, RES_RELAY, 0x01));
+    gateway.onCanFrame(makeHeartbeat(0x0016, 12, 0));
+
+    TEST_ASSERT_EQUAL_UINT8(1, gateway.nodes().count());
+    const DiscoveredNode *found = gateway.nodes().find(0x0016);
+    TEST_ASSERT_NOT_NULL(found);
+    TEST_ASSERT_EQUAL_UINT8(NODE_ID_AUTOMATIC, found->id_mode);
+    TEST_ASSERT_EQUAL_UINT8(1, found->resource_count);
+    TEST_ASSERT_EQUAL_UINT8(RES_RELAY, found->resources[0].resource);
+    TEST_ASSERT_EQUAL_UINT8(0x01, found->resources[0].channel);
+    TEST_ASSERT_EQUAL_UINT32(12, found->uptime_s);
+}
+
 void test_mqtt_bridge_parses_incoming_command() {
     struct MockMqttTransport : public IMqttTransport {
         static bool publishFn(const char *, const uint8_t *, size_t, bool) { return true; }
@@ -318,6 +344,7 @@ int main(int, char **) {
     RUN_TEST(test_routing_engine_routes_can_to_can);
     RUN_TEST(test_routing_engine_routes_to_sink_non_can);
     RUN_TEST(test_gateway_attach_bridge);
+    RUN_TEST(test_gateway_registry_discovers_node_resources);
     RUN_TEST(test_mqtt_bridge_parses_incoming_command);
     RUN_TEST(test_modbus_bridge_translates_can_to_registers);
     return UNITY_END();

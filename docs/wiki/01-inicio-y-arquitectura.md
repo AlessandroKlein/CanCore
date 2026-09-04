@@ -66,6 +66,7 @@ id |= (source   & 0x3FFF);
 | 0x04 | `MSG_OTA` | Transferencia de firmware |
 | 0x05 | `MSG_GROUP` | Escenas y grupos |
 | 0x06 | `MSG_STATE` | Estado / ACK tras ejecutar |
+| 0x07 | `MSG_DISCOVERY` | Identidad, modo de ID y recursos anunciados |
 
 ## 1.4 Payload de 8 bytes
 

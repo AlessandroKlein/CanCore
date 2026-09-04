@@ -112,6 +112,28 @@ void test_ota_data_truncates_oversized_chunk(void) {
     TEST_ASSERT_EQUAL_UINT8(7, frame.data[7]);
 }
 
+void test_automatic_node_id_is_stable_and_valid(void) {
+    const uint16_t first = deriveAutomaticNodeId(0x12345678UL);
+    TEST_ASSERT_EQUAL_UINT16(first, deriveAutomaticNodeId(0x12345678UL));
+    TEST_ASSERT_TRUE(isValidSource(first));
+    TEST_ASSERT_NOT_EQUAL(first, deriveAutomaticNodeId(0x87654321UL));
+}
+
+void test_discovery_frames_describe_node_and_resource(void) {
+    const CanFrame request = makeDiscoveryRequest(0x0001);
+    const CanFrame announce = makeDiscoveryAnnounce(0x0016, NODE_ID_AUTOMATIC, 2);
+    const CanFrame resource = makeDiscoveryResource(0x0016, RES_RELAY, 1);
+
+    TEST_ASSERT_EQUAL_UINT8(MSG_DISCOVERY, request.fields().msg_type);
+    TEST_ASSERT_EQUAL_UINT8(DISCOVERY_REQUEST, request.data[2]);
+    TEST_ASSERT_EQUAL_UINT8(DISCOVERY_ANNOUNCE, announce.data[2]);
+    TEST_ASSERT_EQUAL_UINT8(NODE_ID_AUTOMATIC, announce.data[3]);
+    TEST_ASSERT_EQUAL_UINT8(2, announce.data[4]);
+    TEST_ASSERT_EQUAL_UINT8(DISCOVERY_RESOURCE, resource.data[2]);
+    TEST_ASSERT_EQUAL_UINT8(RES_RELAY, resource.resource());
+    TEST_ASSERT_EQUAL_UINT8(1, resource.channel());
+}
+
 void test_config_frame(void) {
     const uint8_t rule[6] = {0x05, 0x30, 0x01, 0x10, 0x02, ACT_TOGGLE};
     const CanFrame frame = makeConfig(0x0001, 0x16, 0x01, rule, sizeof(rule));
@@ -287,7 +309,7 @@ void test_heartbeat_is_periodic(void) {
 
     node.poll(0);
     const size_t after_first = phy.sentCount();
-    TEST_ASSERT_EQUAL_UINT32(1, after_first);
+    TEST_ASSERT_EQUAL_UINT32(2, after_first);
 
     node.poll(CAN_HEARTBEAT_PERIOD_MS - 1);
     TEST_ASSERT_EQUAL_UINT32(after_first, phy.sentCount());
@@ -337,6 +359,8 @@ int main(int, char **) {
     RUN_TEST(test_telemetry_uses_low_priority);
     RUN_TEST(test_ota_data_frame);
     RUN_TEST(test_ota_data_truncates_oversized_chunk);
+    RUN_TEST(test_automatic_node_id_is_stable_and_valid);
+    RUN_TEST(test_discovery_frames_describe_node_and_resource);
     RUN_TEST(test_config_frame);
     RUN_TEST(test_filter_by_target);
     RUN_TEST(test_filter_by_msg_type);

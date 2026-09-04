@@ -111,16 +111,53 @@ void test_config_store_roundtrip_with_crc() {
     MemoryStorage storage;
     ConfigStore config(storage);
     config.begin(0x0016);
+    config.setNodeIdMode(NODE_ID_AUTOMATIC);
     TEST_ASSERT_TRUE(config.addRule(makeShortClickRule()));
     TEST_ASSERT_TRUE(config.save());
 
     ConfigStore reloaded(storage);
     TEST_ASSERT_TRUE(reloaded.begin(0x0001));
     TEST_ASSERT_EQUAL_UINT16(0x0016, reloaded.nodeId());
+    TEST_ASSERT_EQUAL_UINT8(NODE_ID_AUTOMATIC, reloaded.nodeIdMode());
     TEST_ASSERT_EQUAL_UINT8(1, reloaded.ruleCount());
     TEST_ASSERT_EQUAL_UINT16(0x0005, reloaded.rule(0).source_node);
     TEST_ASSERT_EQUAL_UINT8(EVT_SHORT_CLICK, reloaded.rule(0).event);
     TEST_ASSERT_EQUAL_UINT8(RES_RELAY, reloaded.rule(0).target_resource);
+}
+
+void test_remote_identity_and_listen_filter_configuration(void) {
+    VirtualBus wire;
+    NativeCanBus controller_bus(&wire);
+    NativeCanBus target_bus(&wire);
+    CanNode controller(controller_bus, 0x0001);
+    CanNode target(target_bus, 0x0016);
+    controller.begin();
+    target.begin();
+
+    MemoryStorage storage;
+    ConfigStore config(storage);
+    config.begin(0x0016);
+    RuleEngine rules(target, config);
+    rules.begin();
+
+    const uint8_t id_payload[2] = {0x00, 0x22};
+    TEST_ASSERT_EQUAL_UINT8(CAN_OK,
+                             controller.sendConfig(0x16, CFG_SET_NODE_ID, id_payload, 2));
+    target.poll(1000);
+    TEST_ASSERT_EQUAL_UINT16(0x0022, target.nodeId());
+    TEST_ASSERT_EQUAL_UINT8(NODE_ID_MANUAL, target.nodeIdMode());
+
+    const uint8_t mode_payload[1] = {NODE_ID_AUTOMATIC};
+    TEST_ASSERT_EQUAL_UINT8(CAN_OK,
+                             controller.sendConfig(0x22, CFG_SET_NODE_MODE, mode_payload, 1));
+    target.poll(2000);
+    TEST_ASSERT_EQUAL_UINT8(NODE_ID_AUTOMATIC, target.nodeIdMode());
+
+    const uint8_t filter_payload[4] = {0x00, 0x05, RES_ENV_SENSOR, 0x01};
+    TEST_ASSERT_EQUAL_UINT8(CAN_OK,
+                             controller.sendConfig(0x22, CFG_SUBSCRIBE, filter_payload, 4));
+    target.poll(3000);
+    TEST_ASSERT_EQUAL_UINT8(1, target.listenFilterCount());
 }
 
 void test_config_store_rejects_corrupted_block() {
@@ -361,6 +398,7 @@ int main(int, char **) {
     RUN_TEST(test_device_manager_auto_off_timer);
     RUN_TEST(test_device_manager_ramp_is_non_blocking);
     RUN_TEST(test_config_store_roundtrip_with_crc);
+    RUN_TEST(test_remote_identity_and_listen_filter_configuration);
     RUN_TEST(test_config_store_rejects_corrupted_block);
     RUN_TEST(test_config_store_empty_medium_uses_defaults);
     RUN_TEST(test_rule_engine_executes_remote_event_locally);

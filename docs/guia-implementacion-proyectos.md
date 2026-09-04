@@ -95,7 +95,33 @@ void setup() {
 
 En ESP32 no asignar directamente `millis` si el compilador informa que su retorno es `unsigned long`; usar un wrapper que devuelva `uint32_t`, como en `src/main.cpp`.
 
-## 5. Nodo CAN
+## 5. Identidad y descubrimiento
+
+Elegir una identidad manual para instalaciones controladas o automática cuando
+la placa expone un valor único:
+
+```cpp
+pcd::CanNode node(bus, 0x0016);
+node.setAutomaticNodeId(0x12345678UL); // cambia el origen CAN y lo anuncia
+node.setNodeIdMode(pcd::NODE_ID_AUTOMATIC);
+```
+
+El primer `poll()` emite `MSG_DISCOVERY_ANNOUNCE` y una trama
+`MSG_DISCOVERY_RESOURCE` por canal registrado. El gateway debe guardar esos
+datos y mostrar tipo de recurso, canal, modo de ID y último heartbeat. Se puede
+solicitar un nuevo anuncio con `makeDiscoveryRequest()`.
+
+Los filtros de escucha se pueden definir localmente o recibir por SDO:
+
+```cpp
+node.addListenFilter(pcd::kAnySource, pcd::RES_ENV_SENSOR, pcd::kAnyChannel);
+```
+
+Los comandos `CFG_SET_NODE_ID`, `CFG_SET_NODE_MODE`, `CFG_SUBSCRIBE` y
+`CFG_CLEAR_SUBSCRIPTIONS` permiten administrarlos desde otro nodo o desde el
+conversor ESP32/web.
+
+## 6. Nodo CAN
 
 ```cpp
 pcd::Esp32TwaiBus bus(5, 4);
@@ -125,7 +151,7 @@ void loop() {
 
 En AVR cambiar el HAL por `Mcp2515Bus(cs, pcd::MCP_CLOCK_16MHZ, intPin)` y reservar los dos extremos del bus con terminacion de 120 ohm.
 
-## 6. Gateway y web
+## 7. Gateway y web
 
 ```cpp
 #include <PCD_CAN.h>
@@ -150,7 +176,7 @@ void loopWeb() {
 
 La UI de `webAppHtml()` presenta estas situaciones: resumen operativo, inventario de nodos, tabla de rutas, OTA por CAN, tunel IP, diagnostico y ajustes. El backend debe implementar los endpoints definidos en `docs/web-gateway.md` y autenticar todas las rutas de escritura.
 
-## 7. Reglas de seguridad
+## 8. Reglas de seguridad
 
 - No guardar contrasenas, tokens ni claves dentro de `web_pages.cpp`.
 - No exponer el gateway fuera de la LAN sin autenticacion y TLS.
@@ -159,7 +185,7 @@ La UI de `webAppHtml()` presenta estas situaciones: resumen operativo, inventari
 - No ejecutar trabajo pesado dentro de callbacks de ISR o recepcion CAN.
 - No enviar tramas reenviadas de vuelta al mismo segmento sin anti-bucle.
 
-## 8. Checklist de entrega
+## 9. Checklist de entrega
 
 - [ ] `pio test -e native` pasa.
 - [ ] Compila el target de la placa final.

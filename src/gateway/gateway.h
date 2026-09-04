@@ -23,6 +23,7 @@
 #include "can_node.h"
 #include "routing/route_table.h"
 #include "routing/routing_engine.h"
+#include "gateway/node_registry.h"
 
 namespace pcd {
 
@@ -58,6 +59,8 @@ class Gateway {
 
     RoutingEngine &router() { return router_; }
     const RouteTable &table() const { return table_; }
+    NodeRegistry &nodes() { return nodes_; }
+    const NodeRegistry &nodes() const { return nodes_; }
 
   private:
     static void frameTrampoline(const CanFrame &frame, void *ctx);
@@ -68,6 +71,7 @@ class Gateway {
     GatewayConfig config_;
     IBridge *bridges_[4];
     uint8_t bridge_count_;
+    NodeRegistry nodes_;
 };
 
 }  // namespace pcd

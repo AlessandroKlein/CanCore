@@ -15,6 +15,7 @@
 
 #include <stdint.h>
 
+#include "can_protocol.h"
 #include "system_config.h"
 
 namespace pcd {
@@ -65,10 +66,10 @@ struct BindingRule {
 
 static const uint8_t kBindingRuleBytes = 20;
 static const uint16_t kConfigMagic = 0x5043; /* 'P','C' */
-static const uint8_t kConfigVersion = 1;
+static const uint8_t kConfigVersion = 2;
 
 /* Cabecera + reglas + CRC. Determina el tamano minimo del adaptador. */
-static const uint16_t kConfigHeaderBytes = 6;
+static const uint16_t kConfigHeaderBytes = 7;
 static const uint16_t kConfigTotalBytes =
     kConfigHeaderBytes + static_cast<uint16_t>(kBindingRuleBytes) * CAN_MAX_RULES + 2;
 
@@ -86,6 +87,8 @@ class ConfigStore {
 
     uint16_t nodeId() const { return node_id_; }
     void setNodeId(uint16_t node_id) { node_id_ = node_id; }
+    NodeIdMode nodeIdMode() const { return node_id_mode_; }
+    void setNodeIdMode(NodeIdMode mode) { node_id_mode_ = mode; }
 
     uint8_t ruleCount() const { return rule_count_; }
     const BindingRule &rule(uint8_t index) const { return rules_[index]; }
@@ -101,6 +104,7 @@ class ConfigStore {
   private:
     StorageAdapter &storage_;
     uint16_t node_id_;
+    NodeIdMode node_id_mode_;
     uint8_t rule_count_;
     BindingRule rules_[CAN_MAX_RULES];
 };

@@ -56,7 +56,7 @@ void ConfigStore::deserializeRule(const uint8_t *in, BindingRule &out) {
 }
 
 ConfigStore::ConfigStore(StorageAdapter &storage)
-    : storage_(storage), node_id_(0), rule_count_(0) {}
+    : storage_(storage), node_id_(0), node_id_mode_(NODE_ID_MANUAL), rule_count_(0) {}
 
 bool ConfigStore::begin(uint16_t default_node_id) {
     if (!storage_.begin() || storage_.capacity() < kConfigTotalBytes) {
@@ -72,15 +72,21 @@ bool ConfigStore::begin(uint16_t default_node_id) {
 
 void ConfigStore::reset(uint16_t node_id) {
     node_id_ = node_id;
+    node_id_mode_ = NODE_ID_MANUAL;
     rule_count_ = 0;
 }
 
 bool ConfigStore::load() {
     uint8_t header[kConfigHeaderBytes];
-    if (!storage_.read(0, header, kConfigHeaderBytes)) {
+    if (!storage_.read(0, header, 6)) {
         return false;
     }
-    if (readUint16BE(&header[0]) != kConfigMagic || header[2] != kConfigVersion) {
+    if (readUint16BE(&header[0]) != kConfigMagic ||
+        (header[2] != 1 && header[2] != kConfigVersion)) {
+        return false;
+    }
+    const uint16_t header_bytes = (header[2] == 1) ? 6 : kConfigHeaderBytes;
+    if (header_bytes == kConfigHeaderBytes && !storage_.read(6, &header[6], 1)) {
         return false;
     }
     const uint8_t count = header[3];
@@ -89,8 +95,8 @@ bool ConfigStore::load() {
     }
 
     const uint16_t payload_bytes =
-        kConfigHeaderBytes + static_cast<uint16_t>(kBindingRuleBytes) * count;
-    uint16_t crc = crc16(header, kConfigHeaderBytes);
+        header_bytes + static_cast<uint16_t>(kBindingRuleBytes) * count;
+    uint16_t crc = crc16(header, header_bytes);
 
     uint8_t raw[kBindingRuleBytes];
     BindingRule staged[CAN_MAX_RULES];
@@ -113,6 +119,9 @@ bool ConfigStore::load() {
     }
 
     node_id_ = readUint16BE(&header[4]);
+    node_id_mode_ = (header_bytes == kConfigHeaderBytes && header[6] == NODE_ID_AUTOMATIC)
+                        ? NODE_ID_AUTOMATIC
+                        : NODE_ID_MANUAL;
     rule_count_ = count;
     for (uint8_t i = 0; i < count; ++i) {
         rules_[i] = staged[i];
@@ -126,6 +135,7 @@ bool ConfigStore::save() {
     header[2] = kConfigVersion;
     header[3] = rule_count_;
     writeUint16BE(&header[4], node_id_);
+    header[6] = node_id_mode_;
 
     if (!storage_.write(0, header, kConfigHeaderBytes)) {
         return false;

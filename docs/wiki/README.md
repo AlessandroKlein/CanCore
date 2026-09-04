@@ -1,6 +1,6 @@
 # Wiki del ecosistema CAN descentralizado (PCD v1)
 
-Documentacion completa del proyecto `canbus_ecosistema_v5`.
+Documentacion completa del proyecto `canbus_ecosistema_v5` (version 0.4.0).
 
 | # | Seccion | Contenido |
 |---|---------|-----------|
@@ -40,6 +40,11 @@ Lo que **si** existe hoy ademas del nucleo:
 - `udp_tunnel_transport`: cola de datagramas de referencia.
 - `ota_manager`: emisor de imagenes OTA por CAN con CRC global.
 - `web/web_pages`: UI HTML/CSS/JS agnostica para el gateway.
+- `MSG_DISCOVERY`: anuncio de identidad, modo de ID y recursos por canal.
+- Identidad manual/automatica persistente y filtros de escucha configurables
+  por CAN o por la API web del gateway.
+- Ejemplos Arduino IDE en `examples/` para nodo, reglas, identidad,
+  descubrimiento/filtros y gateway web.
 
 Todavia queda fuera del nucleo: adaptadores concretos WiFi/Ethernet/MQTT/KNX/
 ESP-NOW, bootloader OTA CAN receptor, servidor HTTP y backend STM32. Se

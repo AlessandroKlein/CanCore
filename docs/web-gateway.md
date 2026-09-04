@@ -24,6 +24,8 @@ El ejemplo de interfaz consulta estos endpoints JSON:
 | `/api/ota/status` | GET | estado, progreso y error |
 | `/api/tunnel/status` | GET | transporte, peers y datagramas |
 | `/api/diagnostics` | GET | bus-off, errores, uptime y memoria |
+| `/api/identity` | GET/POST | modo manual/automático e ID actual |
+| `/api/listen-filters` | GET/POST | filtros de origen, recurso y canal |
 | `/api/ota/abort` | POST | cancela la campaña OTA |
 
 Los endpoints son un contrato de aplicación, no forman parte del núcleo PCD. Las respuestas pueden crecer sin romper la UI.
@@ -53,10 +55,30 @@ void loopWeb() {
 
 Para `ESPAsyncWebServer`, la ruta equivalente usa `request->send(200, "text/html", pcd::webAppHtml())`. En ambos casos, la autenticacion debe ejecutarse antes de responder a `/api/*`.
 
+`/api/nodes` debe presentar cada nodo descubierto con esta forma mínima:
+
+```json
+{
+    "nodes": [{
+        "id": 22,
+        "status": "online",
+        "last_heartbeat": 123456,
+        "id_mode": "manual",
+        "resources": [{"type": 16, "name": "Rele", "channel": 1}]
+    }]
+}
+```
+
+El nombre visible se deriva del tipo de recurso (`RES_RELAY`, `RES_DIMMER`,
+`RES_ENV_SENSOR`, etc.) y no de texto enviado por un nodo, evitando que una
+identificación remota inyecte HTML en la pantalla.
+
 ## Situaciones cubiertas
 
 - **Operacion:** resumen y actividad del bus.
 - **Inventario:** nodos vivos y ultimo heartbeat.
+- **Identidad:** selección manual/automática y Node-ID actual.
+- **Escucha:** filtros por origen, recurso y canal, configurables vía API y CAN.
 - **Enrutamiento:** inspeccion de reglas hacia puentes.
 - **Mantenimiento:** progreso y cancelacion OTA.
 - **Interconexion:** estado de tunel UDP/TCP.

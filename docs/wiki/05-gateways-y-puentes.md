@@ -24,6 +24,11 @@ tramas con un destino externo:
 Regla de diseno: el gateway **no** inventa estado. Publica hacia afuera lo que
 llega en `MSG_STATE` y traduce lo que llega de afuera a `MSG_EVENT` dirigido.
 
+`Gateway::nodes()` expone `NodeRegistry`, que se actualiza con los heartbeats y
+los anuncios `MSG_DISCOVERY`. Así, al conectar un nuevo elemento el conversor
+puede mostrar su Node-ID, modo manual/automático y cada tipo de recurso con su
+canal, en vez de presentar solo una dirección numérica.
+
 ## 5.3 Puente CAN <-> MQTT / Home Assistant
 
 Estructura de topicos prevista:

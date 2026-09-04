@@ -71,7 +71,37 @@ typedef void (*FrameListener)(const CanFrame &frame, void *ctx);
 El manejador de recurso devuelve `false` para rechazar un comando: en ese caso no
 se difunde estado.
 
-## 4.2 `DeviceManager`
+## 4.2 Identidad, descubrimiento y filtros de escucha
+
+El nodo puede trabajar con ID manual o automático:
+
+```cpp
+uint16_t id = pcd::deriveAutomaticNodeId(unique_hardware_value);
+pcd::CanNode node(bus, id);
+node.setNodeIdMode(pcd::NODE_ID_AUTOMATIC);
+node.setAutomaticNodeId(unique_hardware_value);
+```
+
+`deriveAutomaticNodeId()` produce siempre un valor válido entre `0x0001` y
+`0x3FFF` para una misma identidad y semilla. No reemplaza una asignación
+centralizada: dos placas con la misma identidad pueden colisionar.
+
+En el primer `poll()` se anuncian el modo de ID y la cantidad de recursos,
+seguidos por una trama `DISCOVERY_RESOURCE` por canal. Un gateway puede pedirlo
+otra vez con `makeDiscoveryRequest()`.
+
+```cpp
+node.publishDiscovery();
+node.addListenFilter(pcd::kAnySource, pcd::RES_ENV_SENSOR, pcd::kAnyChannel);
+node.subscribe(pcd::kAnySource, pcd::RES_ENV_SENSOR, pcd::kAnyChannel, onSensor);
+```
+
+La configuración remota usa `CFG_SET_NODE_ID`, `CFG_SET_NODE_MODE`,
+`CFG_SUBSCRIBE` y `CFG_CLEAR_SUBSCRIPTIONS`. El cambio de ID se aplica en
+memoria y se persiste; no hace falta reiniciar para que el nodo empiece a usar
+el nuevo origen CAN.
+
+## 4.3 `DeviceManager`
 
 Administra los canales heterogeneos del nodo con una maquina de estados por
 canal (`PHASE_IDLE`, `PHASE_RAMPING`, `PHASE_TIMED`). `CanNode` ya contiene uno y
@@ -107,7 +137,7 @@ node.applyLocal(RES_DIMMER, 0x01, ACT_SET_VALUE, packSetValue(80, 3000));
 Cuando el temporizador vence o la rampa termina, el gestor difunde el estado por
 si mismo (`StateEmitter`), cerrando el lazo de realimentacion.
 
-## 4.3 `ConfigStore` y `StorageAdapter`
+## 4.4 `ConfigStore` y `StorageAdapter`
 
 Persistencia del Node-ID y de las reglas, con cabecera, version y CRC-16.
 
@@ -142,14 +172,15 @@ Disposicion del bloque:
 
 ```
 offset 0  : magic 'PC' (2)  version (1)  cantidad de reglas (1)  node_id (2)
-offset 6  : reglas de 20 bytes cada una, big-endian
+offset 6  : modo de ID (0 manual, 1 automatico)
+offset 7  : reglas de 20 bytes cada una, big-endian
 final     : CRC-16/CCITT de la cabecera + las reglas (2)
 ```
 
 Si el CRC no valida, `begin()` devuelve `false` y el nodo arranca con los valores
 por defecto en lugar de con reglas a medio escribir.
 
-## 4.4 `RuleEngine` y `BindingRule`
+## 4.5 `RuleEngine` y `BindingRule`
 
 ```cpp
 struct BindingRule {
@@ -195,7 +226,7 @@ el camino.
 > `MSG_STATE` puede realimentarse entre dos nodos. Preferir `TRIG_EVENT` sobre
 > entradas digitales para las vinculaciones de tecla.
 
-## 4.5 Programacion remota por SDO
+## 4.6 Programacion remota por SDO
 
 Una regla ocupa 20 bytes y no entra en los 6 bytes utiles de una trama, por lo
 que se transfiere segmentada. Sub-comandos (byte 1 de un `MSG_CONFIG`):
@@ -210,12 +241,36 @@ que se transfiere segmentada. Sub-comandos (byte 1 de un `MSG_CONFIG`):
 | `CFG_RULE_CLEAR` | 0x06 | - |
 | `CFG_SAVE` | 0x07 | - |
 | `CFG_RULE_COUNT` | 0x08 | - |
+| `CFG_SET_NODE_MODE` | 0x09 | byte 0: `NODE_ID_MANUAL` o `NODE_ID_AUTOMATIC` |
+| `CFG_SUBSCRIBE` | 0x0A | origen (2 bytes BE), recurso, canal |
+| `CFG_UNSUBSCRIBE` | 0x0B | limpia filtros de escucha |
+| `CFG_CLEAR_SUBSCRIPTIONS` | 0x0C | limpia filtros de escucha |
 | `CFG_ACK` | 0x7F | sub-comando + codigo de resultado |
 
 La regla solo se aplica y se persiste si llegaron los cuatro segmentos y el CRC
 coincide; si no, el nodo responde `CFG_STATUS_CRC_ERROR` y descarta el buffer.
 
-## 4.6 HAL: `ICanBus`
+## 4.7 `Gateway` y `NodeRegistry`
+
+`Gateway` mantiene un inventario estático de nodos descubiertos. El registro
+consume `MSG_HEARTBEAT`, `DISCOVERY_ANNOUNCE` y `DISCOVERY_RESOURCE` y conserva
+Node-ID, modo de identidad, uptime, salud y recursos por canal:
+
+```cpp
+const pcd::DiscoveredNode *node = gateway.nodes().find(0x0016);
+if (node != 0) {
+    for (uint8_t i = 0; i < node->resource_count; ++i) {
+        // node->resources[i].resource / channel
+    }
+}
+```
+
+Los límites por defecto son `CAN_MAX_DISCOVERED_NODES=16` y
+`CAN_MAX_DISCOVERED_RESOURCES=16`; se pueden sobrescribir con `build_flags`.
+El backend web debe serializar este registro en `/api/nodes` y traducir los
+tipos de recurso a nombres legibles.
+
+## 4.8 HAL: `ICanBus`
 
 ```cpp
 CanStatus begin(uint32_t bitrate = CAN_BUS_BITRATE);
@@ -236,7 +291,7 @@ CanStatus recover();
 Codigos de estado: `CAN_OK`, `CAN_ERR_INIT`, `CAN_ERR_TX_FAIL`, `CAN_ERR_TX_BUSY`,
 `CAN_ERR_NO_DATA`, `CAN_ERR_BUS_OFF`, `CAN_ERR_NOT_STARTED`.
 
-## 4.7 Utilidades del protocolo
+## 4.9 Utilidades del protocolo
 
 ```cpp
 uint32_t encodeId(uint8_t priority, uint8_t msg_type, uint8_t target, uint16_t source);
@@ -253,7 +308,7 @@ uint32_t frameParam(const CanFrame &frame);
 uint16_t crc16(const uint8_t *data, uint16_t length, uint16_t seed = 0xFFFF);
 ```
 
-## 4.8 Capa de servicios del sistema (`system_api`)
+## 4.10 Capa de servicios del sistema (`system_api`)
 
 El nucleo **no** llama a `millis()`, `delay()` ni `Serial` de forma directa.
 La aplicacion inyecta estos servicios una vez, tipicamente en `setup()`:

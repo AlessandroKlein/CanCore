@@ -51,6 +51,10 @@ class CanNode {
 
     uint16_t nodeId() const { return node_id_; }
     uint8_t address() const { return static_cast<uint8_t>(node_id_ & kTargetMask); }
+    NodeIdMode nodeIdMode() const { return node_id_mode_; }
+    void setNodeId(uint16_t node_id);
+    void setNodeIdMode(NodeIdMode mode) { node_id_mode_ = mode; }
+    void setAutomaticNodeId(uint32_t unique_value, uint16_t salt = 0x51A7);
 
     /* Registra un recurso local (rele, dimmer, cortina, ...). */
     bool registerResource(uint8_t resource, uint8_t channel, ResourceHandler handler,
@@ -63,6 +67,9 @@ class CanNode {
     /* Suscribe el nodo a estados remotos; kAnySource / kAnyChannel actuan como comodin. */
     bool subscribe(uint16_t source, uint8_t resource, uint8_t channel, StateListener listener,
                    void *ctx = 0);
+    bool addListenFilter(uint16_t source, uint8_t resource, uint8_t channel);
+    void clearListenFilters();
+    uint8_t listenFilterCount() const { return listen_filter_count_; }
 
     void onConfig(ConfigListener listener, void *ctx = 0);
 
@@ -99,6 +106,7 @@ class CanNode {
     CanStatus sendConfigAck(const uint8_t *payload, uint8_t payload_len);
 
     CanStatus sendHeartbeat(uint32_t now_ms);
+    CanStatus publishDiscovery();
 
     /* Aplica localmente un comando (por ejemplo desde una tecla fisica) y
      * difunde el estado resultante, cerrando el lazo de realimentacion. */
@@ -110,6 +118,7 @@ class CanNode {
   private:
     bool isForThisNode(const CanId &id) const;
     void dispatchState(const CanFrame &frame);
+    bool acceptsListenFilter(const CanFrame &frame) const;
 
     /* Puente entre los cambios autonomos del gestor de recursos y el bus. */
     static void emitState(uint8_t resource, uint8_t channel, float value, uint16_t flags,
@@ -117,15 +126,20 @@ class CanNode {
 
     ICanBus &bus_;
     uint16_t node_id_;
+    NodeIdMode node_id_mode_;
     uint32_t last_heartbeat_ms_;
     uint32_t boot_ms_;
     bool boot_ms_valid_;
     bool heartbeat_sent_;
+    bool discovery_sent_;
 
     DeviceManager devices_;
 
     Subscription subscriptions_[CAN_MAX_SUBSCRIPTIONS];
     uint8_t subscription_count_;
+
+    Subscription listen_filters_[CAN_MAX_SUBSCRIPTIONS];
+    uint8_t listen_filter_count_;
 
     ConfigListener config_listener_;
     void *config_ctx_;

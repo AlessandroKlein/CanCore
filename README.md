@@ -1,5 +1,7 @@
 # canbus_ecosistema_v5
 
+Version actual: **0.4.0**.
+
 Ecosistema domótico e industrial **descentralizado** sobre CAN Bus 2.0B (29 bits), según el PRD v5.0 "MASTER".
 
 Este repositorio contiene la **librería de comunicación** (PCD v1): protocolo, capa de abstracción de hardware, capa de nodo, gestión de recursos, persistencia y reglas descentralizadas. Los puentes (MQTT, túnel UDP, Modbus), el servidor web y el OTA se construyen sobre esta base.
@@ -30,6 +32,8 @@ y la integración web en [`docs/web-gateway.md`](docs/web-gateway.md).
 | `udp_tunnel_transport` | implementado y testeado |
 | `ota_manager` — emisor OTA por CAN | implementado y testeado |
 | `web/web_pages` — UI HTML agnóstica para gateway | implementado y testeado |
+| identidad manual/automática, descubrimiento y filtros CAN | implementado y testeado |
+| `gateway/node_registry` — inventario de nodos y recursos | implementado y testeado |
 | bootloader OTA receptor, HTTP concreto y backend STM32 | pendientes en proyectos de firmware |
 
 ## Protocolo PCD v1
@@ -42,6 +46,12 @@ Identificador extendido de 29 bits:
  bits 20..14 (7)   Destino     0x01..0x7E · 0x00 broadcast/grupo
  bits 13..0  (14)  Origen      0x0001..0x3FFF
 ```
+
+Los nodos anuncian su identidad y recursos con `MSG_DISCOVERY` al comenzar a
+procesar el bus. El gateway puede pedir el anuncio nuevamente y mostrar, por
+ejemplo, `RES_RELAY / canal 1` o `RES_ENV_SENSOR / canal 2`. El ID puede ser
+manual o derivarse automáticamente con `deriveAutomaticNodeId()`; el modo se
+persiste y también se puede cambiar por SDO.
 
 Payload de 8 bytes:
 
@@ -101,6 +111,14 @@ pio run -e esp32_hmi          # pantalla táctil CAN
 pio run -e atmega2560_node    # nodo de campo de alta densidad (MCP2515)
 pio run -e atmega328p_node    # nodo de campo compacto (MCP2515)
 ```
+
+Ejemplos incluidos:
+
+- `examples/NodoReleBoton`: nodo mínimo con relé y pulsador.
+- `examples/ReglasPersistentes`: reglas locales persistentes.
+- `examples/IdentidadManualAutomatica`: selección de ID manual/automático.
+- `examples/DescubrimientoYFiltros`: anuncio de recursos y filtros de escucha.
+- `examples/GatewayWebPCD`: servidor web ESP32 y UI de referencia.
 
 El entorno `native` usa `VirtualBus`, un bus CAN en memoria que conecta varios `NativeCanBus`, lo que permite
 validar el ecosistema completo sin hardware.

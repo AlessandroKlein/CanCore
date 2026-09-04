@@ -25,7 +25,7 @@ canbus_ecosistema_v5/
 │   ├── web/web_pages.{h,cpp} UI HTML agnostica del gateway
 │   ├── routing/              tabla y motor de rutas
 │   ├── bridge/               bridges MQTT y Modbus
-│   ├── gateway/              composicion de nodo + rutas + bridges
+│   ├── gateway/              composicion, registro de nodos y bridges
 │   └── main.cpp              firmware de referencia (solo PlatformIO)
 ├── examples/                 sketches .ino para Arduino IDE
 ├── test/                     pruebas unitarias Unity
@@ -55,6 +55,14 @@ En el sketch alcanza con:
 #include <PCD_CAN.h>
 ```
 
+Ejemplos incluidos:
+
+- `NodoReleBoton`: recurso de relé y pulsador local.
+- `ReglasPersistentes`: reglas guardadas y programables por CAN.
+- `IdentidadManualAutomatica`: modo manual/automático y persistencia.
+- `DescubrimientoYFiltros`: anuncios de recursos y filtros de escucha.
+- `GatewayWebPCD`: UI web de referencia para ESP32.
+
 `PCD_CAN.h` selecciona el driver segun la plataforma detectada: TWAI en ESP32,
 MCP2515 en AVR, bus virtual en escritorio.
 
@@ -79,7 +87,7 @@ Entornos definidos en `platformio.ini`:
 Comandos habituales:
 
 ```bash
-pio test -e native                 # pruebas unitarias (53 casos)
+pio test -e native                 # pruebas unitarias (56 casos)
 pio run -e esp32_gateway           # compilar el gateway
 pio run -e atmega328p_node -t upload
 pio device monitor -b 115200

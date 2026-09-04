@@ -34,6 +34,14 @@ bool isValidSource(uint16_t source) {
     return source >= 1 && source <= kMaxSource;
 }
 
+uint16_t deriveAutomaticNodeId(uint32_t unique_value, uint16_t salt) {
+    uint32_t hash = unique_value ^ (static_cast<uint32_t>(salt) << 16);
+    hash ^= hash >> 16;
+    hash *= 0x45D9F3BUL;
+    hash ^= hash >> 16;
+    return static_cast<uint16_t>((hash % kMaxSource) + 1);
+}
+
 void writeUint16BE(uint8_t *dst, uint16_t value) {
     dst[0] = static_cast<uint8_t>((value >> 8) & 0xFF);
     dst[1] = static_cast<uint8_t>(value & 0xFF);
@@ -116,6 +124,28 @@ CanFrame makeHeartbeat(uint16_t source, uint32_t uptime_s, uint8_t health) {
         makeFrame(PRIO_TELEMETRY, MSG_HEARTBEAT, source, kBroadcastTarget, RES_SYSTEM, 0x00);
     frame.data[2] = health;
     writeUint32BE(&frame.data[3], uptime_s);
+    return frame;
+}
+
+CanFrame makeDiscoveryRequest(uint16_t source, uint8_t target) {
+    CanFrame frame = makeFrame(PRIO_CONFIG, MSG_DISCOVERY, source, target, RES_SYSTEM, 0);
+    frame.data[2] = DISCOVERY_REQUEST;
+    return frame;
+}
+
+CanFrame makeDiscoveryAnnounce(uint16_t source, uint8_t id_mode, uint8_t resource_count) {
+    CanFrame frame = makeFrame(PRIO_CONFIG, MSG_DISCOVERY, source, kBroadcastTarget,
+                               RES_SYSTEM, 0);
+    frame.data[2] = DISCOVERY_ANNOUNCE;
+    frame.data[3] = id_mode;
+    frame.data[4] = resource_count;
+    return frame;
+}
+
+CanFrame makeDiscoveryResource(uint16_t source, uint8_t resource, uint8_t channel) {
+    CanFrame frame = makeFrame(PRIO_CONFIG, MSG_DISCOVERY, source, kBroadcastTarget,
+                               resource, channel);
+    frame.data[2] = DISCOVERY_RESOURCE;
     return frame;
 }
 

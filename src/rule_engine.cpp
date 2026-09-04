@@ -23,6 +23,8 @@ void RuleEngine::configTrampoline(const CanFrame &frame, void *ctx) {
 }
 
 void RuleEngine::begin() {
+    node_.setNodeId(config_.nodeId());
+    node_.setNodeIdMode(config_.nodeIdMode());
     node_.onAnyFrame(&RuleEngine::frameTrampoline, this);
     node_.onConfig(&RuleEngine::configTrampoline, this);
 }
@@ -93,9 +95,44 @@ bool RuleEngine::handleConfig(const CanFrame &frame) {
                 return true;
             }
             config_.setNodeId(new_id);
+            config_.setNodeIdMode(NODE_ID_MANUAL);
+            node_.setNodeId(new_id);
+            node_.setNodeIdMode(NODE_ID_MANUAL);
             sendAck(sub_command, config_.save() ? CFG_STATUS_OK : CFG_STATUS_STORAGE_ERROR);
             return true;
         }
+
+        case CFG_SET_NODE_MODE: {
+            if (payload[0] > NODE_ID_AUTOMATIC) {
+                sendAck(sub_command, CFG_STATUS_BAD_REQUEST);
+                return true;
+            }
+            const NodeIdMode mode = static_cast<NodeIdMode>(payload[0]);
+            config_.setNodeIdMode(mode);
+            node_.setNodeIdMode(mode);
+            sendAck(sub_command, config_.save() ? CFG_STATUS_OK : CFG_STATUS_STORAGE_ERROR);
+            return true;
+        }
+
+        case CFG_SUBSCRIBE: {
+            const uint16_t source = readUint16BE(payload);
+            if (!node_.addListenFilter(source, payload[2], payload[3])) {
+                sendAck(sub_command, CFG_STATUS_FULL);
+            } else {
+                sendAck(sub_command, CFG_STATUS_OK);
+            }
+            return true;
+        }
+
+        case CFG_UNSUBSCRIBE:
+            node_.clearListenFilters();
+            sendAck(sub_command, CFG_STATUS_OK);
+            return true;
+
+        case CFG_CLEAR_SUBSCRIPTIONS:
+            node_.clearListenFilters();
+            sendAck(sub_command, CFG_STATUS_OK);
+            return true;
 
         case CFG_RULE_BEGIN: {
             memset(staged_, 0, sizeof(staged_));

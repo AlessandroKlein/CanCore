@@ -25,6 +25,7 @@ void Gateway::frameTrampoline(const CanFrame &frame, void *ctx) {
 }
 
 void Gateway::onCanFrame(const CanFrame &frame) {
+    nodes_.observe(frame);
     /* 1. El enrutador traduce y ejecuta la tabla de rutas. */
     router_.onCanFrame(frame);
 

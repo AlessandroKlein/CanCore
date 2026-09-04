@@ -5,16 +5,31 @@ namespace pcd {
 CanNode::CanNode(ICanBus &bus, uint16_t node_id)
     : bus_(bus),
       node_id_(node_id),
+            node_id_mode_(NODE_ID_MANUAL),
       last_heartbeat_ms_(0),
       boot_ms_(0),
       boot_ms_valid_(false),
       heartbeat_sent_(false),
+    discovery_sent_(false),
       subscription_count_(0),
+    listen_filter_count_(0),
       config_listener_(0),
       config_ctx_(0),
       frame_listener_(0),
       frame_ctx_(0) {
     devices_.setStateEmitter(&CanNode::emitState, this);
+}
+
+void CanNode::setNodeId(uint16_t node_id) {
+    if (isValidSource(node_id)) {
+        node_id_ = node_id;
+        discovery_sent_ = false;
+    }
+}
+
+void CanNode::setAutomaticNodeId(uint32_t unique_value, uint16_t salt) {
+    setNodeId(deriveAutomaticNodeId(unique_value, salt));
+    node_id_mode_ = NODE_ID_AUTOMATIC;
 }
 
 CanStatus CanNode::begin(uint32_t bitrate) {
@@ -50,6 +65,39 @@ bool CanNode::subscribe(uint16_t source, uint8_t resource, uint8_t channel, Stat
     return true;
 }
 
+bool CanNode::addListenFilter(uint16_t source, uint8_t resource, uint8_t channel) {
+    if (listen_filter_count_ >= CAN_MAX_SUBSCRIPTIONS) {
+        return false;
+    }
+    Subscription &entry = listen_filters_[listen_filter_count_++];
+    entry.source = source;
+    entry.resource = resource;
+    entry.channel = channel;
+    entry.listener = 0;
+    entry.ctx = 0;
+    return true;
+}
+
+void CanNode::clearListenFilters() {
+    listen_filter_count_ = 0;
+}
+
+bool CanNode::acceptsListenFilter(const CanFrame &frame) const {
+    if (listen_filter_count_ == 0) {
+        return true;
+    }
+    const CanId id = frame.fields();
+    for (uint8_t i = 0; i < listen_filter_count_; ++i) {
+        const Subscription &filter = listen_filters_[i];
+        if ((filter.source == kAnySource || filter.source == id.source) &&
+            filter.resource == frame.resource() &&
+            (filter.channel == kAnyChannel || filter.channel == frame.channel())) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void CanNode::onConfig(ConfigListener listener, void *ctx) {
     config_listener_ = listener;
     config_ctx_ = ctx;
@@ -65,6 +113,9 @@ bool CanNode::isForThisNode(const CanId &id) const {
 }
 
 void CanNode::dispatchState(const CanFrame &frame) {
+    if (!acceptsListenFilter(frame)) {
+        return;
+    }
     const CanId id = frame.fields();
     const float value = frameValue(frame);
     for (uint8_t i = 0; i < subscription_count_; ++i) {
@@ -124,6 +175,13 @@ bool CanNode::handleFrame(const CanFrame &frame) {
             return true;
         }
 
+        case MSG_DISCOVERY:
+            if (frame.data[2] == DISCOVERY_REQUEST && isForThisNode(id)) {
+                publishDiscovery();
+                return true;
+            }
+            return frame.data[2] == DISCOVERY_ANNOUNCE || frame.data[2] == DISCOVERY_RESOURCE;
+
         default:
             return false;
     }
@@ -151,6 +209,11 @@ void CanNode::poll(uint32_t now_ms) {
 
     devices_.update(now_ms);
 
+    if (!discovery_sent_) {
+        publishDiscovery();
+        discovery_sent_ = true;
+    }
+
     if (bus_.isBusOff()) {
         bus_.recover();
     }
@@ -158,6 +221,22 @@ void CanNode::poll(uint32_t now_ms) {
     if (!heartbeat_sent_ || (now_ms - last_heartbeat_ms_) >= CAN_HEARTBEAT_PERIOD_MS) {
         sendHeartbeat(now_ms);
     }
+}
+
+CanStatus CanNode::publishDiscovery() {
+    CanStatus status = bus_.send(
+        makeDiscoveryAnnounce(node_id_, node_id_mode_, devices_.count()));
+    if (status != CAN_OK) {
+        return status;
+    }
+    for (uint8_t i = 0; i < devices_.count(); ++i) {
+        const Channel &channel = devices_.at(i);
+        status = bus_.send(makeDiscoveryResource(node_id_, channel.resource, channel.channel));
+        if (status != CAN_OK) {
+            return status;
+        }
+    }
+    return CAN_OK;
 }
 
 CanStatus CanNode::sendCommand(uint8_t target, uint8_t resource, uint8_t channel, uint8_t action,
