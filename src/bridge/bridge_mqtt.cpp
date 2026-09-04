@@ -180,11 +180,31 @@ const char *resourceComponentName(uint8_t resource) {
     switch (resource) {
         case RES_RELAY: return "switch";
         case RES_DIMMER: return "light";
+        case RES_LIGHT: return "light";
         case RES_COVER: return "cover";
+        case RES_FAN: return "fan";
+        case RES_LOCK: return "lock";
+        case RES_VALVE: return "valve";
         case RES_ENV_SENSOR:
         case RES_GAS_SENSOR:
         case RES_POWER_SENSOR:
+        case RES_PRESSURE_SENSOR:
+        case RES_HUMIDITY_SENSOR:
+        case RES_CO2_SENSOR:
+        case RES_AIR_QUALITY:
+        case RES_GPS:
+        case RES_VIBRATION_SENSOR:
+        case RES_VOLTAGE_SENSOR:
+        case RES_CURRENT_SENSOR:
+        case RES_FREQUENCY_SENSOR:
+        case RES_ENERGY_SENSOR:
+        case RES_BATTERY:
             return "sensor";
+        case RES_BUTTON:
+        case RES_BINARY_SENSOR:
+        case RES_WATER_LEAK:
+        case RES_SMOKE:
+            return "binary_sensor";
         default:
             return "binary_sensor";
     }

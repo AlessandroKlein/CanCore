@@ -1,6 +1,6 @@
 # Puentes bidireccionales y comunicacion descentralizada
 
-Version de referencia: **0.6.0**.
+Version de referencia: **0.7.0**.
 
 PCD_CAN sigue siendo una libreria de protocolo CAN personalizada. El bus CAN es el plano de control descentralizado: cada nodo ejecuta recursos y reglas localmente, y un gateway solo traduce protocolos o conecta segmentos.
 
@@ -26,6 +26,9 @@ No agregar `PubSubClient`, Matter, Zigbee, ESPHome, `Ethernet.h`, `WiFi.h`, Modb
 | ESPHome | API command -> CAN | `MSG_STATE` -> entidad |
 | UDP/TCP/Ethernet | datagrama -> `TunnelEngine` -> CAN | CAN -> datagrama |
 | TFT/SPI | toque -> `sendCommand()` | suscripcion -> pantalla |
+| CANopen | PDO/SDO externo -> bridge | estado/comando -> PDO |
+| NMEA2000 | PGN externo -> estado canónico | estado -> PGN |
+| KNX | GroupValue -> estado canónico | estado -> GroupValue |
 
 ## Configuracion de escucha
 

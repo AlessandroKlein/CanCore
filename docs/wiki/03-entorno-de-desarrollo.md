@@ -88,7 +88,7 @@ Entornos definidos en `platformio.ini`:
 Comandos habituales:
 
 ```bash
-pio test -e native                 # pruebas unitarias (59 casos)
+pio test -e native                 # pruebas unitarias (62 casos)
 pio run -e esp32_gateway           # compilar el gateway
 pio run -e atmega328p_node -t upload
 pio device monitor -b 115200

@@ -42,6 +42,40 @@ uint16_t deriveAutomaticNodeId(uint32_t unique_value, uint16_t salt) {
     return static_cast<uint16_t>((hash % kMaxSource) + 1);
 }
 
+const char *resourceName(uint8_t resource) {
+    switch (resource) {
+        case RES_RELAY: return "relay";
+        case RES_DIMMER: return "dimmer";
+        case RES_DIGITAL_INPUT: return "digital_input";
+        case RES_ENV_SENSOR: return "environment";
+        case RES_GAS_SENSOR: return "gas";
+        case RES_POWER_SENSOR: return "power";
+        case RES_COVER: return "cover";
+        case RES_BUTTON: return "button";
+        case RES_BINARY_SENSOR: return "binary_sensor";
+        case RES_LIGHT: return "light";
+        case RES_FAN: return "fan";
+        case RES_LOCK: return "lock";
+        case RES_VALVE: return "valve";
+        case RES_WATER_LEAK: return "water_leak";
+        case RES_SMOKE: return "smoke";
+        case RES_PRESSURE_SENSOR: return "pressure";
+        case RES_HUMIDITY_SENSOR: return "humidity";
+        case RES_CO2_SENSOR: return "co2";
+        case RES_AIR_QUALITY: return "air_quality";
+        case RES_GPS: return "gps";
+        case RES_VIBRATION_SENSOR: return "vibration";
+        case RES_VOLTAGE_SENSOR: return "voltage";
+        case RES_CURRENT_SENSOR: return "current";
+        case RES_FREQUENCY_SENSOR: return "frequency";
+        case RES_ENERGY_SENSOR: return "energy";
+        case RES_BATTERY: return "battery";
+        case RES_CONFIG: return "config";
+        case RES_SYSTEM: return "system";
+        default: return "custom";
+    }
+}
+
 void writeUint16BE(uint8_t *dst, uint16_t value) {
     dst[0] = static_cast<uint8_t>((value >> 8) & 0xFF);
     dst[1] = static_cast<uint8_t>(value & 0xFF);

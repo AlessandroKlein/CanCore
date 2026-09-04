@@ -35,6 +35,7 @@
 #include "tunnel/udp_tunnel_transport.h"
 #include "tunnel/tunnel_relay_guard.h"
 #include "ota_manager.h"
+#include "ota_window.h"
 
 /* Recursos HTML agnosticos para la interfaz del gateway. */
 #include "web/web_pages.h"
@@ -46,6 +47,7 @@
 #include "bridge/bridge.h"
 #include "bridge/bridge_mqtt.h"
 #include "bridge/bridge_modbus.h"
+#include "bridge/bridge_standard.h"
 #include "gateway/gateway.h"
 
 #if defined(ARDUINO_ARCH_ESP32)
@@ -56,4 +58,4 @@
 #include "hal/hal_can_native.h"
 #endif
 
-#define PCD_CAN_VERSION "0.6.0"
+#define PCD_CAN_VERSION "0.7.0"

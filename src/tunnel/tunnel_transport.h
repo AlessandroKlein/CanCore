@@ -19,6 +19,16 @@
 
 namespace pcd {
 
+static const uint8_t kTunnelProtocolVersion = 1;
+
+struct ITunnelAuthenticator {
+  virtual ~ITunnelAuthenticator() {}
+  virtual bool sign(const uint8_t *data, size_t len, uint8_t *tag,
+            size_t tag_len) = 0;
+  virtual bool verify(const uint8_t *data, size_t len, const uint8_t *tag,
+            size_t tag_len) = 0;
+};
+
 static const uint16_t kBroadcastPeer = 0x0000;
 
 class ITunnelTransport {

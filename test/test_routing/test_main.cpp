@@ -355,6 +355,51 @@ void test_modbus_bridge_translates_can_to_registers() {
     TEST_ASSERT_EQUAL_UINT32(75, out.param);
 }
 
+void test_standard_bridges_are_bidirectional(void) {
+    struct StandardTransport {
+        static bool pdo(uint16_t, const uint8_t *, size_t, void *ctx) {
+            ++*static_cast<int *>(ctx); return true;
+        }
+        static bool pgn(uint32_t, uint8_t, const uint8_t *, size_t, void *ctx) {
+            ++*static_cast<int *>(ctx); return true;
+        }
+    };
+    int canopen_calls = 0;
+    int nmea_calls = 0;
+    ICanopenTransport canopen_transport;
+    canopen_transport.sendPdo = StandardTransport::pdo;
+    canopen_transport.ctx = &canopen_calls;
+    INmea2000Transport nmea_transport;
+    nmea_transport.sendPgn = StandardTransport::pgn;
+    nmea_transport.ctx = &nmea_calls;
+
+    CanopenBridge canopen(canopen_transport);
+    Nmea2000Bridge nmea(nmea_transport);
+    CanonicalFrame command;
+    command.source_id = 0x0016;
+    command.resource = RES_RELAY;
+    command.channel = 1;
+    command.action = ACT_ON;
+    command.is_command = 1;
+    TEST_ASSERT_TRUE(canopen.process(command));
+    canopen.queueIncoming(0x0020, RES_RELAY, 1, ACT_OFF);
+    TEST_ASSERT_TRUE(canopen.available());
+    TEST_ASSERT_TRUE(canopen.buildCanonical(command));
+    TEST_ASSERT_EQUAL_UINT8(PROTO_CANOPEN, command.protocol);
+
+    CanonicalFrame state;
+    state.source_id = 0x0020;
+    state.resource = RES_POWER_SENSOR;
+    state.channel = 1;
+    state.value = 12.5f;
+    TEST_ASSERT_TRUE(nmea.process(state));
+    nmea.queueIncoming(0x0020, RES_ENV_SENSOR, 1, 22.0f);
+    TEST_ASSERT_TRUE(nmea.buildCanonical(state));
+    TEST_ASSERT_EQUAL_UINT8(PROTO_NMEA2000, state.protocol);
+    TEST_ASSERT_EQUAL_INT(1, canopen_calls);
+    TEST_ASSERT_EQUAL_INT(1, nmea_calls);
+}
+
 int main(int, char **) {
     UNITY_BEGIN();
     RUN_TEST(test_canonical_from_can_state);
@@ -368,6 +413,7 @@ int main(int, char **) {
     RUN_TEST(test_gateway_registry_expires_silent_nodes);
     RUN_TEST(test_mqtt_bridge_parses_incoming_command);
     RUN_TEST(test_modbus_bridge_translates_can_to_registers);
+    RUN_TEST(test_standard_bridges_are_bidirectional);
     return UNITY_END();
 }
 

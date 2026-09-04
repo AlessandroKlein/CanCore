@@ -23,6 +23,11 @@ enum ProtocolSource : uint8_t {
     PROTO_KNX = 3,
     PROTO_IP = 4,
     PROTO_MQTT = 5
+    ,PROTO_CANOPEN = 6
+    ,PROTO_NMEA2000 = 7
+    ,PROTO_MATTER = 8
+    ,PROTO_ZIGBEE = 9
+    ,PROTO_ESPHOME = 10
 };
 
 /*

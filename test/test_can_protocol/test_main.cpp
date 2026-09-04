@@ -134,6 +134,15 @@ void test_discovery_frames_describe_node_and_resource(void) {
     TEST_ASSERT_EQUAL_UINT8(1, resource.channel());
 }
 
+void test_extended_resource_catalog_has_stable_names(void) {
+    TEST_ASSERT_EQUAL_STRING("fan", resourceName(RES_FAN));
+    TEST_ASSERT_EQUAL_STRING("lock", resourceName(RES_LOCK));
+    TEST_ASSERT_EQUAL_STRING("co2", resourceName(RES_CO2_SENSOR));
+    TEST_ASSERT_EQUAL_STRING("gps", resourceName(RES_GPS));
+    TEST_ASSERT_EQUAL_STRING("battery", resourceName(RES_BATTERY));
+    TEST_ASSERT_EQUAL_STRING("custom", resourceName(0xFE));
+}
+
 void test_config_frame(void) {
     const uint8_t rule[6] = {0x05, 0x30, 0x01, 0x10, 0x02, ACT_TOGGLE};
     const CanFrame frame = makeConfig(0x0001, 0x16, 0x01, rule, sizeof(rule));
@@ -361,6 +370,7 @@ int main(int, char **) {
     RUN_TEST(test_ota_data_truncates_oversized_chunk);
     RUN_TEST(test_automatic_node_id_is_stable_and_valid);
     RUN_TEST(test_discovery_frames_describe_node_and_resource);
+    RUN_TEST(test_extended_resource_catalog_has_stable_names);
     RUN_TEST(test_config_frame);
     RUN_TEST(test_filter_by_target);
     RUN_TEST(test_filter_by_msg_type);

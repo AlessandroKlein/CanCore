@@ -1,6 +1,6 @@
 # Wiki del ecosistema CAN descentralizado (PCD v1)
 
-Documentacion completa del proyecto `canbus_ecosistema_v5` (version 0.6.0).
+Documentacion completa del proyecto `canbus_ecosistema_v5` (version 0.7.0).
 
 | # | Seccion | Contenido |
 |---|---------|-----------|
@@ -16,6 +16,7 @@ Documentacion completa del proyecto `canbus_ecosistema_v5` (version 0.6.0).
 | 10 | [Guia de implementacion en proyectos](../guia-implementacion-proyectos.md) | PlatformIO, Arduino IDE, nodos y gateways |
 | 11 | [Puentes bidireccionales](../puentes-bidireccionales.md) | Matter, Zigbee, MQTT, ESPHome, ESP-NOW, Modbus, Ethernet y TFT |
 | 12 | [Futuras mejoras](../../FUTURE_IMPROVEMENTS.md) | seguridad, OTA, interoperabilidad y criterio para 1.0.0 |
+| 13 | [Recursos y protocolos estándar](09-recursos-y-protocolos-estandar.md) | catálogo, CANopen, NMEA2000 y KNX |
 
 ## Estado de la implementacion
 
@@ -44,6 +45,9 @@ Lo que **si** existe hoy ademas del nucleo:
 - `web/web_pages`: UI HTML/CSS/JS agnostica para el gateway.
 - `NodeRegistry`: inventario con expiracion por heartbeat.
 - `TunnelRelayGuard`: anti-loop y deduplicacion por segmento.
+- `OtaWindowController`: control local de ventanas y ACK OTA.
+- Bridges estándar agnósticos: `CanopenBridge`, `Nmea2000Bridge` y `KnxBridge`.
+- Catálogo ampliado de actuadores, sensores, seguridad, energía, GPS y batería.
 - `MSG_DISCOVERY`: anuncio de identidad, modo de ID y recursos por canal.
 - Identidad manual/automatica persistente y filtros de escucha configurables
   por CAN o por la API web del gateway.

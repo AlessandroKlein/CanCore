@@ -1,6 +1,6 @@
 # canbus_ecosistema_v5
 
-Version actual: **0.6.0**.
+Version actual: **0.7.0**.
 
 Ecosistema domótico e industrial **descentralizado** sobre CAN Bus 2.0B (29 bits), según el PRD v5.0 "MASTER".
 
@@ -36,6 +36,7 @@ roadmap mantenido está en [`FUTURE_IMPROVEMENTS.md`](FUTURE_IMPROVEMENTS.md).
 | identidad manual/automática, descubrimiento y filtros CAN | implementado y testeado |
 | `gateway/node_registry` — inventario de nodos y recursos | implementado y testeado |
 | expiración de nodos y `TunnelRelayGuard` anti-loop | implementado y testeado |
+| catálogo extendido de recursos, CANopen/NMEA2000/KNX y ventanas OTA | implementado y testeado |
 | puentes Matter/Zigbee/ESPHome/ESP-NOW, bootloader OTA receptor, HTTP concreto y backend STM32 | ejemplos y contratos disponibles; integracion final en proyectos de firmware |
 
 ## Protocolo PCD v1
@@ -107,7 +108,7 @@ node.sendCommand(0x16, pcd::RES_RELAY, 0x01, pcd::ACT_TOGGLE);
 ## Entornos de compilación
 
 ```bash
-pio test -e native            # suite unitaria completa (57 casos)
+pio test -e native            # suite unitaria completa (62 casos)
 pio run -e esp32_gateway      # gateway / puente multiprotocolo (TWAI)
 pio run -e esp32_hmi          # pantalla táctil CAN
 pio run -e atmega2560_node    # nodo de campo de alta densidad (MCP2515)
@@ -136,7 +137,7 @@ Ejemplos incluidos:
 
 El ejemplo LAN completo está documentado en
 `examples/CanLanBridgeGateway/README.md`. La release sigue siendo `0.6.0`:
-faltan autenticación criptográfica del túnel, bootloader OTA receptor y
+ faltan autenticación criptográfica del túnel, bootloader OTA receptor y
 pruebas con hardware real para afirmar una release `1.0.0` de producción.
 
 El entorno `native` usa `VirtualBus`, un bus CAN en memoria que conecta varios `NativeCanBus`, lo que permite

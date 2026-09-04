@@ -373,6 +373,21 @@ void test_tunnel_relay_guard_blocks_loops_and_duplicates(void) {
     TEST_ASSERT_TRUE(guard.accept(1, frame, 7000));
 }
 
+void test_ota_window_controller_waits_for_ack(void) {
+    const uint8_t image[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    OtaManager manager(1, 0x16);
+    TEST_ASSERT_TRUE(manager.begin(image, sizeof(image)));
+    OtaWindowController windows(manager, 2);
+    CanFrame frame;
+    TEST_ASSERT_TRUE(windows.next(frame));
+    TEST_ASSERT_TRUE(windows.next(frame));
+    TEST_ASSERT_TRUE(windows.waitingAck());
+    TEST_ASSERT_FALSE(windows.next(frame));
+    TEST_ASSERT_TRUE(windows.acknowledge(0, 0));
+    TEST_ASSERT_FALSE(windows.waitingAck());
+    TEST_ASSERT_FALSE(windows.next(frame));
+}
+
 int main(int, char **) {
     UNITY_BEGIN();
     RUN_TEST(test_set_system_api);
@@ -388,6 +403,7 @@ int main(int, char **) {
     RUN_TEST(test_ota_manager_rejects_invalid_image_and_can_abort);
     RUN_TEST(test_web_pages_expose_gateway_views);
     RUN_TEST(test_tunnel_relay_guard_blocks_loops_and_duplicates);
+    RUN_TEST(test_ota_window_controller_waits_for_ack);
     return UNITY_END();
 }
 

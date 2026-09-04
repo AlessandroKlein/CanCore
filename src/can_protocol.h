@@ -69,6 +69,25 @@ enum ResourceType : uint8_t {
     RES_GAS_SENSOR = 0x50,
     RES_POWER_SENSOR = 0x60,
     RES_COVER = 0x70,
+    RES_BUTTON = 0x71,
+    RES_BINARY_SENSOR = 0x72,
+    RES_LIGHT = 0x73,
+    RES_FAN = 0x74,
+    RES_LOCK = 0x75,
+    RES_VALVE = 0x76,
+    RES_WATER_LEAK = 0x77,
+    RES_SMOKE = 0x78,
+    RES_PRESSURE_SENSOR = 0x80,
+    RES_HUMIDITY_SENSOR = 0x81,
+    RES_CO2_SENSOR = 0x82,
+    RES_AIR_QUALITY = 0x83,
+    RES_GPS = 0x84,
+    RES_VIBRATION_SENSOR = 0x85,
+    RES_VOLTAGE_SENSOR = 0x90,
+    RES_CURRENT_SENSOR = 0x91,
+    RES_FREQUENCY_SENSOR = 0x92,
+    RES_ENERGY_SENSOR = 0x93,
+    RES_BATTERY = 0x94,
     RES_CONFIG = 0xE0,
     RES_SYSTEM = 0xF0
 };
@@ -178,6 +197,7 @@ CanId decodeId(uint32_t raw_id);
 bool isValidTarget(uint8_t target);
 bool isValidSource(uint16_t source);
 uint16_t deriveAutomaticNodeId(uint32_t unique_value, uint16_t salt = 0x51A7);
+const char *resourceName(uint8_t resource);
 
 /* ------------------------------------------------------------------ */
 /* Trama completa                                                       */
