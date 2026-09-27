@@ -82,6 +82,12 @@ struct CanonicalFrame {
             c.is_command = 1;
             c.action = frame.data[2];
             c.param = frameParam(frame);
+        } else if (id.msg_type == MSG_GROUP) {
+            /* Escenas y grupos: el byte 2 lleva la accion (ACT_ON, ACT_SCENE...)
+             * y los bytes 3..6 el parametro (numero de escena). */
+            c.is_command = 1;
+            c.action = frame.data[2];
+            c.param = frameParam(frame);
         }
         return c;
     }

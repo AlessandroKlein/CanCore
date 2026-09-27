@@ -1,0 +1,14 @@
+# Directivas para Cline (Entorno Local)
+
+1. Estrategia Modular:
+   - Modificá un archivo a la vez. No hagas cambios masivos simultáneos sin probarlos.
+   - Al crear clases o componentes, mantené cada uno en su propio archivo encabezado/fuente correspondiente.
+
+2. Documentación al código:
+   - Documentá cada línea clave o función compleja con comentarios explicativos directos y concisos.
+
+3. Ejecución y Diagnóstico:
+   - Después de editar un archivo, ejecutá el linter o el comando de compilación/test en la terminal para verificar que no haya errores sintácticos antes de continuar.
+
+4. Formato de Respuesta:
+   - Evitá explicaciones teóricas extensas salvo que se soliciten explícitamente. Ir directo a la implementación técnica.

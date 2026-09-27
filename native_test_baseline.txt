@@ -1,0 +1,102 @@
+********************************************************************************
+Obsolete PIO Core v6.1.18 is used (previous was 6.2.0)
+Please remove multiple PIO Cores from a system:
+https://docs.platformio.org/en/latest/core/installation/troubleshooting.html
+********************************************************************************
+Verbosity level can be increased via `-v, -vv, or -vvv` option
+Collected 4 tests
+
+Processing test_can_protocol in native environment
+--------------------------------------------------------------------------------
+Building...
+Testing...
+test\test_can_protocol\test_main.cpp:360: test_id_roundtrip	[PASSED]
+test\test_can_protocol\test_main.cpp:361: test_id_field_layout	[PASSED]
+test\test_can_protocol\test_main.cpp:362: test_id_fields_do_not_overflow	[PASSED]
+test\test_can_protocol\test_main.cpp:363: test_priority_dominates_arbitration	[PASSED]
+test\test_can_protocol\test_main.cpp:364: test_address_validation	[PASSED]
+test\test_can_protocol\test_main.cpp:365: test_float_big_endian_roundtrip	[PASSED]
+test\test_can_protocol\test_main.cpp:366: test_command_frame	[PASSED]
+test\test_can_protocol\test_main.cpp:367: test_state_broadcast_frame	[PASSED]
+test\test_can_protocol\test_main.cpp:368: test_telemetry_uses_low_priority	[PASSED]
+test\test_can_protocol\test_main.cpp:369: test_ota_data_frame	[PASSED]
+test\test_can_protocol\test_main.cpp:370: test_ota_data_truncates_oversized_chunk	[PASSED]
+test\test_can_protocol\test_main.cpp:371: test_automatic_node_id_is_stable_and_valid	[PASSED]
+test\test_can_protocol\test_main.cpp:372: test_discovery_frames_describe_node_and_resource	[PASSED]
+test\test_can_protocol\test_main.cpp:373: test_extended_resource_catalog_has_stable_names	[PASSED]
+test\test_can_protocol\test_main.cpp:374: test_config_frame	[PASSED]
+test\test_can_protocol\test_main.cpp:375: test_filter_by_target	[PASSED]
+test\test_can_protocol\test_main.cpp:376: test_filter_by_msg_type	[PASSED]
+test\test_can_protocol\test_main.cpp:377: test_feedback_loop_between_nodes	[PASSED]
+test\test_can_protocol\test_main.cpp:378: test_local_action_syncs_the_bus	[PASSED]
+test\test_can_protocol\test_main.cpp:379: test_node_ignores_frames_for_other_targets	[PASSED]
+test\test_can_protocol\test_main.cpp:380: test_group_scene_reaches_every_node	[PASSED]
+test\test_can_protocol\test_main.cpp:381: test_heartbeat_is_periodic	[PASSED]
+test\test_can_protocol\test_main.cpp:382: test_config_listener_receives_sdo	[PASSED]
+------------- native:test_can_protocol [PASSED] Took 3.08 seconds -------------
+
+Processing test_node_logic in native environment
+--------------------------------------------------------------------------------
+Building...
+Testing...
+test\test_node_logic\test_main.cpp:397: test_device_manager_registers_and_applies	[PASSED]
+test\test_node_logic\test_main.cpp:398: test_device_manager_auto_off_timer	[PASSED]
+test\test_node_logic\test_main.cpp:399: test_device_manager_ramp_is_non_blocking	[PASSED]
+test\test_node_logic\test_main.cpp:400: test_config_store_roundtrip_with_crc	[PASSED]
+test\test_node_logic\test_main.cpp:401: test_remote_identity_and_listen_filter_configuration	[PASSED]
+test\test_node_logic\test_main.cpp:402: test_config_store_rejects_corrupted_block	[PASSED]
+test\test_node_logic\test_main.cpp:403: test_config_store_empty_medium_uses_defaults	[PASSED]
+test\test_node_logic\test_main.cpp:404: test_rule_engine_executes_remote_event_locally	[PASSED]
+test\test_node_logic\test_main.cpp:405: test_rule_engine_ignores_other_sources_and_events	[PASSED]
+test\test_node_logic\test_main.cpp:406: test_rule_engine_threshold_trigger	[PASSED]
+test\test_node_logic\test_main.cpp:407: test_rule_engine_sdo_programs_and_persists_rule	[PASSED]
+test\test_node_logic\test_main.cpp:408: test_rule_engine_sdo_rejects_bad_crc	[PASSED]
+test\test_node_logic\test_main.cpp:409: test_node_publishes_state_when_timer_expires	[PASSED]
+-------------- native:test_node_logic [PASSED] Took 3.34 seconds --------------
+
+Processing test_routing in native environment
+--------------------------------------------------------------------------------
+Building...
+Testing...
+test\test_routing\test_main.cpp:405: test_canonical_from_can_state	[PASSED]
+test\test_routing\test_main.cpp:406: test_canonical_from_can_command	[PASSED]
+test\test_routing\test_main.cpp:407: test_route_table_match_and_serialize	[PASSED]
+test\test_routing\test_main.cpp:408: test_route_table_rejects_bad_crc	[PASSED]
+test\test_routing\test_main.cpp:409: test_routing_engine_routes_can_to_can	[PASSED]
+test\test_routing\test_main.cpp:410: test_routing_engine_routes_to_sink_non_can	[PASSED]
+test\test_routing\test_main.cpp:411: test_gateway_attach_bridge	[PASSED]
+test\test_routing\test_main.cpp:412: test_gateway_registry_discovers_node_resources	[PASSED]
+test\test_routing\test_main.cpp:413: test_gateway_registry_expires_silent_nodes	[PASSED]
+test\test_routing\test_main.cpp:414: test_mqtt_bridge_parses_incoming_command	[PASSED]
+test\test_routing\test_main.cpp:415: test_modbus_bridge_translates_can_to_registers	[PASSED]
+test\test_routing\test_main.cpp:416: test_standard_bridges_are_bidirectional	[PASSED]
+---------------- native:test_routing [PASSED] Took 3.36 seconds ----------------
+
+Processing test_system_tunnel in native environment
+--------------------------------------------------------------------------------
+Building...
+Testing...
+test\test_system_tunnel\test_main.cpp:393: test_set_system_api	[PASSED]
+test\test_system_tunnel\test_main.cpp:394: test_ring_buffer_push_pop	[PASSED]
+test\test_system_tunnel\test_main.cpp:395: test_ring_buffer_full_and_wrap	[PASSED]
+test\test_system_tunnel\test_main.cpp:396: test_event_loop_enqueue_and_tick	[PASSED]
+test\test_system_tunnel\test_main.cpp:397: test_tunnel_roundtrip	[PASSED]
+test\test_system_tunnel\test_main.cpp:398: test_tunnel_rejects_bad_magic	[PASSED]
+test\test_system_tunnel\test_main.cpp:399: test_tunnel_rejects_bad_crc	[PASSED]
+test\test_system_tunnel\test_main.cpp:400: test_tunnel_engine_send_receive	[PASSED]
+test\test_system_tunnel\test_main.cpp:401: test_udp_tunnel_transport_queue_and_dispatch	[PASSED]
+test\test_system_tunnel\test_main.cpp:402: test_ota_manager_streams_image_and_crc	[PASSED]
+test\test_system_tunnel\test_main.cpp:403: test_ota_manager_rejects_invalid_image_and_can_abort	[PASSED]
+test\test_system_tunnel\test_main.cpp:404: test_web_pages_expose_gateway_views	[PASSED]
+test\test_system_tunnel\test_main.cpp:405: test_tunnel_relay_guard_blocks_loops_and_duplicates	[PASSED]
+test\test_system_tunnel\test_main.cpp:406: test_ota_window_controller_waits_for_ack	[PASSED]
+------------- native:test_system_tunnel [PASSED] Took 3.38 seconds -------------
+
+=================================== SUMMARY ===================================
+Environment    Test                Status    Duration
+-------------  ------------------  --------  ------------
+native         test_can_protocol   PASSED    00:00:03.076
+native         test_node_logic     PASSED    00:00:03.342
+native         test_routing        PASSED    00:00:03.364
+native         test_system_tunnel  PASSED    00:00:03.384
+================= 62 test cases: 62 succeeded in 00:00:13.167 =================

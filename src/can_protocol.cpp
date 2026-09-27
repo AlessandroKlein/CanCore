@@ -10,6 +10,10 @@ uint32_t encodeId(uint8_t priority, uint8_t msg_type, uint8_t target, uint16_t s
     id |= (static_cast<uint32_t>(msg_type) & kMsgTypeMask) << kMsgTypeShift;
     id |= (static_cast<uint32_t>(target) & kTargetMask) << kTargetShift;
     id |= (static_cast<uint32_t>(source) & kSourceMask) << kSourceShift;
+#if PCD_ID_LAYOUT_V2
+    /* El Node-ID de 16 bits transporta el ramal en los bits 12..8. */
+    id |= (static_cast<uint32_t>(source >> 8) & kSegmentMask) << kSegmentShift;
+#endif
     return id & kExtendedIdMask;
 }
 
@@ -22,8 +26,26 @@ CanId decodeId(uint32_t raw_id) {
     id.priority = static_cast<uint8_t>((raw_id >> kPriorityShift) & kPriorityMask);
     id.msg_type = static_cast<uint8_t>((raw_id >> kMsgTypeShift) & kMsgTypeMask);
     id.target = static_cast<uint8_t>((raw_id >> kTargetShift) & kTargetMask);
-    id.source = static_cast<uint16_t>((raw_id >> kSourceShift) & kSourceMask);
+    const uint16_t address = static_cast<uint16_t>((raw_id >> kSourceShift) & kSourceMask);
+#if PCD_ID_LAYOUT_V2
+    id.segment = static_cast<uint8_t>((raw_id >> kSegmentShift) & kSegmentMask);
+#else
+    id.segment = 0;
+#endif
+    id.source = static_cast<uint16_t>(((id.segment & kSegmentMask) << 8) | address);
     return id;
+}
+
+uint16_t makeNodeId(uint8_t segment, uint8_t address) {
+    return static_cast<uint16_t>(((segment & kSegmentMask) << 8) | (address & kSourceMask));
+}
+
+uint8_t nodeIdSegment(uint16_t node_id) {
+    return static_cast<uint8_t>((node_id >> 8) & kSegmentMask);
+}
+
+uint8_t nodeIdAddress(uint16_t node_id) {
+    return static_cast<uint8_t>(node_id & kSourceMask);
 }
 
 bool isValidTarget(uint8_t target) {
@@ -31,7 +53,15 @@ bool isValidTarget(uint8_t target) {
 }
 
 bool isValidSource(uint16_t source) {
-    return source >= 1 && source <= kMaxSource;
+    if (source == 0 || source > kMaxSource) {
+        return false;
+    }
+#if PCD_ID_LAYOUT_V2
+    /* La direccion dentro del ramal no puede ser 0: 0xXX00 es reservado. */
+    return nodeIdAddress(source) != 0;
+#else
+    return true;
+#endif
 }
 
 uint16_t deriveAutomaticNodeId(uint32_t unique_value, uint16_t salt) {
@@ -39,7 +69,14 @@ uint16_t deriveAutomaticNodeId(uint32_t unique_value, uint16_t salt) {
     hash ^= hash >> 16;
     hash *= 0x45D9F3BUL;
     hash ^= hash >> 16;
+#if PCD_ID_LAYOUT_V2
+    /* Direccion 1..255 y ramal 0..31 derivados del mismo entero unico. */
+    const uint8_t address = static_cast<uint8_t>((hash % kSourceMask) + 1);
+    const uint8_t segment = static_cast<uint8_t>((hash >> 16) & kSegmentMask);
+    return makeNodeId(segment, address);
+#else
     return static_cast<uint16_t>((hash % kMaxSource) + 1);
+#endif
 }
 
 const char *resourceName(uint8_t resource) {
@@ -65,6 +102,8 @@ const char *resourceName(uint8_t resource) {
         case RES_AIR_QUALITY: return "air_quality";
         case RES_GPS: return "gps";
         case RES_VIBRATION_SENSOR: return "vibration";
+        case RES_DALI_LIGHT: return "dali_light";
+        case RES_KNX_GROUP: return "knx_group";
         case RES_VOLTAGE_SENSOR: return "voltage";
         case RES_CURRENT_SENSOR: return "current";
         case RES_FREQUENCY_SENSOR: return "frequency";
@@ -161,6 +200,43 @@ CanFrame makeHeartbeat(uint16_t source, uint32_t uptime_s, uint8_t health) {
     return frame;
 }
 
+CanFrame makeHealthReport(uint16_t source, const NodeHealth &health) {
+    CanFrame frame = makeFrame(PRIO_TELEMETRY, MSG_STATE, source, kBroadcastTarget, RES_SYSTEM,
+                               kHealthChannelReport);
+    frame.data[2] = health.flags;
+    frame.data[3] = health.heap_percent > 100 ? 100 : health.heap_percent;
+    frame.data[4] = static_cast<uint8_t>(static_cast<int16_t>(health.temperature_c) + 40);
+    frame.data[5] = health.brownout_count;
+    frame.data[6] = health.tec;
+    frame.data[7] = health.rec;
+    return frame;
+}
+
+bool decodeHeartbeat(const CanFrame &frame, uint32_t &uptime_s, uint8_t &health_flags) {
+    const CanId id = frame.fields();
+    if (id.msg_type != MSG_HEARTBEAT || frame.resource() != RES_SYSTEM || frame.dlc < 7) {
+        return false;
+    }
+    health_flags = frame.data[2];
+    uptime_s = readUint32BE(&frame.data[3]);
+    return true;
+}
+
+bool decodeHealthReport(const CanFrame &frame, NodeHealth &out) {
+    const CanId id = frame.fields();
+    if (id.msg_type != MSG_STATE || frame.resource() != RES_SYSTEM ||
+        frame.channel() != kHealthChannelReport || frame.dlc < kPayloadSize) {
+        return false;
+    }
+    out.flags = frame.data[2];
+    out.heap_percent = frame.data[3] > 100 ? 100 : frame.data[3];
+    out.temperature_c = static_cast<int8_t>(static_cast<int16_t>(frame.data[4]) - 40);
+    out.brownout_count = frame.data[5];
+    out.tec = frame.data[6];
+    out.rec = frame.data[7];
+    return true;
+}
+
 CanFrame makeDiscoveryRequest(uint16_t source, uint8_t target) {
     CanFrame frame = makeFrame(PRIO_CONFIG, MSG_DISCOVERY, source, target, RES_SYSTEM, 0);
     frame.data[2] = DISCOVERY_REQUEST;
@@ -206,6 +282,39 @@ CanFrame makeOtaData(uint16_t source, uint8_t target, uint8_t sequence, const ui
     }
     frame.dlc = static_cast<uint8_t>(1 + copied);
     return frame;
+}
+
+CanFrame makeOtaControl(uint16_t source, uint8_t target, uint8_t command, const uint8_t *payload,
+                        uint8_t payload_len) {
+    CanFrame frame;
+    frame.id = encodeId(PRIO_BACKGROUND, MSG_OTA, target, source);
+    frame.data[0] = kOtaControlMarker;
+    frame.data[1] = command;
+    const uint8_t capacity = kPayloadSize - 2;
+    const uint8_t copied = (payload == NULL) ? 0 : (payload_len > capacity ? capacity : payload_len);
+    if (copied > 0) {
+        memcpy(&frame.data[2], payload, copied);
+    }
+    frame.dlc = static_cast<uint8_t>(2 + copied);
+    return frame;
+}
+
+bool isOtaControlFrame(const CanFrame &frame) {
+    return frame.fields().msg_type == MSG_OTA && frame.dlc > 0 &&
+           frame.data[0] == kOtaControlMarker;
+}
+
+bool decodeOtaControl(const CanFrame &frame, uint8_t &command, uint8_t *payload_out) {
+    if (!isOtaControlFrame(frame) || frame.dlc < 2) {
+        return false;
+    }
+    command = frame.data[1];
+    if (payload_out != 0) {
+        for (uint8_t i = 0; i < kPayloadSize - 2; ++i) {
+            payload_out[i] = (i + 2 < frame.dlc) ? frame.data[i + 2] : 0;
+        }
+    }
+    return true;
 }
 
 float frameValue(const CanFrame &frame) {

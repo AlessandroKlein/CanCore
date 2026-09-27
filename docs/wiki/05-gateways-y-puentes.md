@@ -169,3 +169,59 @@ void onFrame(const pcd::CanFrame &frame, void *ctx) {
 
 node.onAnyFrame(onFrame, nullptr);
 ```
+
+## 5.9 Puente CAN <-> Modbus TCP para Loxone
+
+Loxone Config integra hardware de terceros como **maestro Modbus TCP**: el
+Miniserver abre una conexion TCP al puerto **502** del gateway y lee/escribe
+coils y holding registers. El gateway actua de **esclavo**.
+
+El repositorio ya incluye las dos mitades necesarias:
+
+- `bridge/bridge_modbus.h` (`ModbusBridge`) traduce coils/registers <-> CAN a
+  traves del modelo de datos `IModbusRegisterMap`.
+- `bridge/bridge_modbus_tcp.h` (`ModbusTcpServer`) es el **servidor** que habla
+  el ADU Modbus TCP (cabecera MBAP + PDU) y responde a las consultas del
+  maestro. No esta acoplado a ningun stack IP: la aplicacion implementa
+  `IModbusTcpStream` con su servidor TCP (WiFiServer, EthernetServer, AsyncTCP,
+  sockets...).
+
+```
+Loxone Config (maestro) --TCP:502--> ModbusTcpServer --IModbusRegisterMap-->
+                                                          ModbusBridge <-> CAN
+```
+
+### Funciones Modbus soportadas
+
+| Codigo | Funcion | Uso tipico en Loxone |
+|---|---|---|
+| 0x01 | Read Coils | leer estado de reles/entradas |
+| 0x02 | Read Discrete Inputs | igual, lectura de discretos |
+| 0x03 | Read Holding Registers | leer dimmers/consignas/telemetria |
+| 0x04 | Read Input Registers | leer sensores |
+| 0x05 | Write Single Coil | accionar rele |
+| 0x06 | Write Single Register | fijar consigna/dimmer |
+| 0x0F | Write Multiple Coils | escenas sobre varios reles |
+| 0x10 | Write Multiple Registers | bloque de consignas |
+
+### Esquema de direccionamiento recomendado
+
+```
+Coil = slot_nodo * 16 + (canal - 1)          -> reles y entradas digitales
+Reg  = 0x0100 + slot_nodo * 16 + (canal - 1) -> holding (dimmer, consigna)
+```
+
+`slot_nodo` lo asigna la aplicacion al descubrir el Node-ID (via
+`Gateway::nodes()` / `NodeRegistry`). El ejemplo completo vive en
+`examples/CanBusModbusBidireccional`.
+
+### Configuracion en Loxone Config
+
+1. Periphery -> "Modbus" -> agregar un esclavo Modbus TCP con la IP del gateway
+   y puerto 502 (Unit ID 0xFF o el configurado en `ModbusTcpServer::setUnitId`).
+2. Mapear cada coil/registro a un "Virtual Input" (sensor) o "Virtual Output"
+   (actuador) segun el esquema de direcciones anterior.
+3. Las escrituras de Loxone se convierten en `queueIncoming()` -> comando CAN;
+   las lecturas devuelven el ultimo `MSG_STATE` reflejado en el mapa de
+   registros por la aplicacion.
+

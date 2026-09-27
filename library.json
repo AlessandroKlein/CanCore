@@ -1,8 +1,8 @@
 {
   "name": "PCD_CAN",
-  "version": "0.7.0",
-  "description": "Protocolo descentralizado punto a punto sobre CAN Bus 2.0B (29 bits) con identidad manual/automatica, descubrimiento de recursos, configuracion remota, reglas persistentes, routing, OTA y drivers TWAI (ESP32) y MCP2515 (AVR).",
-  "keywords": ["can", "canbus", "mcp2515", "twai", "esp32", "avr", "domotica", "modbus"],
+  "version": "0.8.0",
+  "description": "Protocolo descentralizado punto a punto sobre CAN Bus 2.0B (29 bits) con identidad manual/automatica, descubrimiento de recursos, configuracion remota, reglas persistentes, topologias en estrella/arbol (hub), routing, DALI/KNX, OTA con receptor, HMAC-SHA256 y drivers TWAI (ESP32) y MCP2515 (AVR).",
+  "keywords": ["can", "canbus", "mcp2515", "twai", "esp32", "avr", "domotica", "modbus", "dali", "knx", "ota"],
   "repository": {
     "type": "git",
     "url": "https://github.com/AlessandroKlein/canbus_ecosistema_v5.git"
@@ -26,6 +26,8 @@
     "srcFilter": [
       "+<*.cpp>",
       "+<system/*.cpp>",
+      "+<security/*.cpp>",
+      "+<topology/*.cpp>",
       "+<tunnel/*.cpp>",
       "+<routing/*.cpp>",
       "+<bridge/*.cpp>",

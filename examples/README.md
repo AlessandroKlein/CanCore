@@ -20,10 +20,15 @@ Todos los ejemplos son sketches de aplicacion. Las librerias de terceros aparece
 - `BridgeESPHomeBidireccional`: entidades ESPHome <-> CAN.
 - `BridgeESPNowBidireccional`: paquetes ESP-NOW <-> CAN.
 - `BridgeCANopenNmeaKnx`: CANopen, NMEA2000 y KNX <-> CAN.
-- `CanBusModbusBidireccional`: coils/registers Modbus <-> CAN.
+- `CanBusModbusBidireccional`: coils/registers Modbus (TCP para Loxone) <-> CAN.
 - `CanBusEntreRedes`: dos buses CAN unidos por UDP/TCP.
 - `CanBusEthernetBidireccional`: CAN sobre Ethernet/W5500.
 - `CanLanBridgeGateway`: dos redes CAN por LAN, paginas por gateway y simulacion remota.
+
+## Topologia
+
+- `HubArbolEstrella`: hub/star coupler multi-puerto para estrella o arbol, con
+  validacion de cableado y reenvio anti-bucle.
 
 Cada puente debe:
 

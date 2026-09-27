@@ -31,8 +31,7 @@ bool OtaWindowController::next(CanFrame &out) {
 bool OtaWindowController::acknowledge(uint8_t window, uint16_t missing_mask) {
     if (!waiting_ack_ || window != window_index_) return false;
     if (missing_mask != 0) {
-        /* El emisor debe reiniciarse con la misma imagen para retransmitir.
-         * La máscara queda expuesta para que la aplicación reprograme su cola. */
+        /* Solo los bloques marcados vuelven a emitirse con retryNext(). */
         pending_mask_ = missing_mask;
         return true;
     }
@@ -41,6 +40,36 @@ bool OtaWindowController::acknowledge(uint8_t window, uint16_t missing_mask) {
     pending_mask_ = 0;
     waiting_ack_ = false;
     return true;
+}
+
+bool OtaWindowController::retryNext(CanFrame &out) {
+    if (!waiting_ack_ || pending_mask_ == 0) {
+        return false;
+    }
+    const uint16_t base = static_cast<uint16_t>(window_index_) * window_size_;
+    for (uint8_t i = 0; i < window_size_; ++i) {
+        const uint16_t bit = static_cast<uint16_t>(1U << i);
+        if ((pending_mask_ & bit) == 0) {
+            continue;
+        }
+        if (!manager_.frameAt(static_cast<uint16_t>(base + i), out)) {
+            pending_mask_ = 0;
+            break;
+        }
+        pending_mask_ = static_cast<uint16_t>(pending_mask_ & ~bit);
+        if (pending_mask_ == 0) {
+            ++window_index_;
+            frames_in_window_ = 0;
+            waiting_ack_ = false;
+        }
+        return true;
+    }
+    /* Mascara sin bits utiles: la ventana se da por confirmada. */
+    pending_mask_ = 0;
+    ++window_index_;
+    frames_in_window_ = 0;
+    waiting_ack_ = false;
+    return false;
 }
 
 }  // namespace pcd

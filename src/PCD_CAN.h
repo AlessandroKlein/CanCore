@@ -17,13 +17,20 @@
 #include "config_storage.h"
 #include "device_manager.h"
 #include "hal_can.h"
+#include "node_watchdog.h"
+#include "ota_receiver.h"
 #include "rule_engine.h"
 #include "system_config.h"
+#include "units.h"
 
 /* Capa de servicios del sistema (agnostica al framework). */
 #include "system/system_api.h"
 #include "system/system_logger.h"
 #include "system/system_lock.h"
+
+/* Auditoria y autenticacion sin dependencias externas. */
+#include "security/hmac_authenticator.h"
+#include "security/sha256.h"
 
 /* Bucle de eventos asincrono (ISR -> ring buffer -> tick). */
 #include "core/ring_buffer.h"
@@ -40,13 +47,20 @@
 /* Recursos HTML agnosticos para la interfaz del gateway. */
 #include "web/web_pages.h"
 
+/* Capa fisica por topologia: perfiles de bus y hub/star coupler en arbol. */
+#include "topology/bus_profile.h"
+#include "topology/can_tree_hub.h"
+
 /* Motor de enrutamiento multi-protocolo y puentes. */
 #include "routing/canonical.h"
+#include "routing/knx_group_map.h"
 #include "routing/route_table.h"
 #include "routing/routing_engine.h"
 #include "bridge/bridge.h"
+#include "bridge/bridge_dali.h"
 #include "bridge/bridge_mqtt.h"
 #include "bridge/bridge_modbus.h"
+#include "bridge/bridge_modbus_tcp.h"
 #include "bridge/bridge_standard.h"
 #include "gateway/gateway.h"
 
@@ -58,4 +72,4 @@
 #include "hal/hal_can_native.h"
 #endif
 
-#define PCD_CAN_VERSION "0.7.0"
+#define PCD_CAN_VERSION "0.8.0"

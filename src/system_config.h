@@ -22,6 +22,10 @@
 #define FEATURE_MODBUS_BRIDGE 0
 #endif
 
+#ifndef FEATURE_MODBUS_TCP
+#define FEATURE_MODBUS_TCP 0
+#endif
+
 #ifndef FEATURE_TUNNEL_BRIDGE
 #define FEATURE_TUNNEL_BRIDGE 0
 #endif
