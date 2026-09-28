@@ -1,14 +1,27 @@
-# Directivas para Cline (Entorno Local)
+# Directivas para Cline (Entorno Remoto / CI/CD)
 
 1. Estrategia Modular:
-   - Modificá un archivo a la vez. No hagas cambios masivos simultáneos sin probarlos.
-   - Al crear clases o componentes, mantené cada uno en su propio archivo encabezado/fuente correspondiente.
+   - Modificá un archivo a la vez. No hagas cambios masivos simultáneos.
+   - Al crear clases o componentes, mantené cada uno en su propio archivo encabezado/fuente (`.hpp` / `.cpp`).
 
-2. Documentación al código:
-   - Documentá cada línea clave o función compleja con comentarios explicativos directos y concisos.
+2. Documentación de código:
+   - Documentá cada línea o función clave mediante comentarios explicativos al lado del código.
 
-3. Ejecución y Diagnóstico:
-   - Después de editar un archivo, ejecutá el linter o el comando de compilación/test en la terminal para verificar que no haya errores sintácticos antes de continuar.
+3. Ejecución, Pruebas y CI/CD:
+   - No intentes ejecutar comandos interactivos o dependientes de hardware/entornos locales no disponibles en la terminal.
+   - Validá la sintaxis de los archivos modificados mediante herramientas de análisis estático o compilación no interactiva configuradas en el entorno.
+   - Todo cambio debe prepararse para integrarse mediante controles de versión remotos (Git / GitHub Actions).
 
 4. Formato de Respuesta:
-   - Evitá explicaciones teóricas extensas salvo que se soliciten explícitamente. Ir directo a la implementación técnica.
+   - Ir directo a la implementación técnica sin explicaciones teóricas extensas.
+
+# Regla de automatización para finalización de tareas
+
+Al terminar cualquier tarea o solicitud de desarrollo, debes ejecutar automáticamente el flujo de entrega:
+
+1. **Guardar y publicar en Git/GitHub:**
+   - Realizar el commit de los cambios con un mensaje claro siguiendo el estándar de Commits Convencionales (ej. `feat:`, `fix:`).
+   - Subir las modificaciones al repositorio remoto (`git push`).
+
+2. **Generar la nueva versión:**
+   - Crear y publicar una nueva versión (*New release*) en GitHub incluyendo la etiqueta (*tag*) correspondiente y las notas de cambios (*release notes*).

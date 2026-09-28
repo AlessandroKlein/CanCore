@@ -22,3 +22,8 @@
 #include "v6/pcd_diagnostics.h"
 #include "v6/pcd_firmware.h"
 #include "v6/pcd_mock_can.h"
+
+/* v6.1 - Robustez y confiabilidad. */
+#include "v6/pcd_config.h"
+#include "v6/pcd_shadow.h"
+#include "v6/pcd_alarm.h"

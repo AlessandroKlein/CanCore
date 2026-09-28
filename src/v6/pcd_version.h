@@ -22,16 +22,16 @@ namespace pcd {
 /* ------------------------------------------------------------------ */
 
 #define PCD_LIBRARY_VERSION_MAJOR 6
-#define PCD_LIBRARY_VERSION_MINOR 0
+#define PCD_LIBRARY_VERSION_MINOR 1
 #define PCD_LIBRARY_VERSION_PATCH 0
-#define PCD_LIBRARY_VERSION_STRING "6.0.0"
+#define PCD_LIBRARY_VERSION_STRING "6.1.0"
 
 /* ------------------------------------------------------------------ */
 /* Version de protocolo                                                */
 /* ------------------------------------------------------------------ */
 
 #define PCD_PROTOCOL_MAJOR 6
-#define PCD_PROTOCOL_MINOR 0
+#define PCD_PROTOCOL_MINOR 1
 #define PCD_PROTOCOL_PATCH 0
 
 /* Codificado como un entero comparable: (mayor << 16) | (minor << 8) | patch. */
