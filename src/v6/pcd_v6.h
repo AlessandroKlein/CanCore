@@ -43,3 +43,7 @@
 #include "v6/pcd_group.h"
 #include "v6/pcd_automation.h"
 #include "v6/pcd_scheduler.h"
+
+/* v6.5 - Gateway y router. */
+#include "v6/pcd_router.h"
+#include "v6/pcd_gateway.h"
