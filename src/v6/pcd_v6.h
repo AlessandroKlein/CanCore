@@ -38,3 +38,8 @@
 #include "v6/pcd_topology.h"
 #include "v6/pcd_store_forward.h"
 #include "v6/pcd_network_stats.h"
+
+/* v6.4 - Automatizacion distribuida. */
+#include "v6/pcd_group.h"
+#include "v6/pcd_automation.h"
+#include "v6/pcd_scheduler.h"
