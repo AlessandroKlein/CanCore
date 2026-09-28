@@ -51,6 +51,10 @@
 #include "topology/bus_profile.h"
 #include "topology/can_tree_hub.h"
 
+/* Capa v6 (aditiva): versionado, errores, codec, CRC, CAN ID v6, recursos,
+ * diagnostico, manifiesto de firmware y transporte simulado. */
+#include "v6/pcd_v6.h"
+
 /* Motor de enrutamiento multi-protocolo y puentes. */
 #include "routing/canonical.h"
 #include "routing/knx_group_map.h"
@@ -72,4 +76,4 @@
 #include "hal/hal_can_native.h"
 #endif
 
-#define PCD_CAN_VERSION "0.8.0"
+#define PCD_CAN_VERSION "6.0.0"
