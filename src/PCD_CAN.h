@@ -76,4 +76,4 @@
 #include "hal/hal_can_native.h"
 #endif
 
-#define PCD_CAN_VERSION "6.2.0"
+#define PCD_CAN_VERSION "6.3.0"

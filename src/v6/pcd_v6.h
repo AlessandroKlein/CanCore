@@ -32,3 +32,9 @@
 #include "v6/pcd_security.h"
 #include "v6/pcd_identity.h"
 #include "v6/pcd_negotiation.h"
+
+/* v6.3 - Gestion avanzada de dispositivos. */
+#include "v6/pcd_event.h"
+#include "v6/pcd_topology.h"
+#include "v6/pcd_store_forward.h"
+#include "v6/pcd_network_stats.h"
