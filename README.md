@@ -1,4 +1,4 @@
-# canbus_ecosistema_v5
+# CanCore
 
 Version actual: **0.7.0**.
 
