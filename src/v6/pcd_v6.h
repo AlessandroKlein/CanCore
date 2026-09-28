@@ -27,3 +27,8 @@
 #include "v6/pcd_config.h"
 #include "v6/pcd_shadow.h"
 #include "v6/pcd_alarm.h"
+
+/* v6.2 - Seguridad e identidad. */
+#include "v6/pcd_security.h"
+#include "v6/pcd_identity.h"
+#include "v6/pcd_negotiation.h"
