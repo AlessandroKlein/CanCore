@@ -1,6 +1,6 @@
-# Futuras mejoras de PCD_CAN (v6)
+# Futuras mejoras de PCD_CAN (v7)
 
-Estado de referencia: **6.0.0** (capa v6 aditiva sobre el nucleo existente).
+Estado de referencia: **7.0.0** (plataforma modular completa: v6.0..v7.0).
 
 ---
 

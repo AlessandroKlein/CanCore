@@ -163,6 +163,13 @@ void PCD_MockCAN::deliverFromNetwork(const CanFrame &frame, uint32_t base_ms) {
     }
 }
 
+void PCD_MockCAN::setNetwork(PCD_MockNetwork *network) {
+    net_ = network;
+    if (net_ != 0) {
+        net_->attach(this);
+    }
+}
+
 void PCD_MockCAN::clearRx() {
     for (size_t i = 0; i < rx_count_; ++i) {
         rx_[i].ready = false;

@@ -21,17 +21,17 @@ namespace pcd {
 /* Version de libreria                                                 */
 /* ------------------------------------------------------------------ */
 
-#define PCD_LIBRARY_VERSION_MAJOR 6
-#define PCD_LIBRARY_VERSION_MINOR 5
+#define PCD_LIBRARY_VERSION_MAJOR 7
+#define PCD_LIBRARY_VERSION_MINOR 0
 #define PCD_LIBRARY_VERSION_PATCH 0
-#define PCD_LIBRARY_VERSION_STRING "6.5.0"
+#define PCD_LIBRARY_VERSION_STRING "7.0.0"
 
 /* ------------------------------------------------------------------ */
 /* Version de protocolo                                                */
 /* ------------------------------------------------------------------ */
 
-#define PCD_PROTOCOL_MAJOR 6
-#define PCD_PROTOCOL_MINOR 5
+#define PCD_PROTOCOL_MAJOR 7
+#define PCD_PROTOCOL_MINOR 0
 #define PCD_PROTOCOL_PATCH 0
 
 /* Codificado como un entero comparable: (mayor << 16) | (minor << 8) | patch. */

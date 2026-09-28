@@ -94,6 +94,9 @@ class PCD_MockCAN : public ICanBus {
     /* Simula la desaparicion del nodo descartando las tramas pendientes. */
     void clearRx();
 
+    /* Vincula el nodo a una red simulada (alternativa al constructor). */
+    void setNetwork(PCD_MockNetwork *network);
+
     void setFaults(const FaultConfig &faults) { faults_ = faults; }
     const FaultConfig &faults() const { return faults_; }
 

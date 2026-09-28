@@ -47,3 +47,8 @@
 /* v6.5 - Gateway y router. */
 #include "v6/pcd_router.h"
 #include "v6/pcd_gateway.h"
+
+/* v7.0 - Herramientas de plataforma. */
+#include "v6/pcd_analyzer.h"
+#include "v6/pcd_simulator.h"
+#include "v6/pcd_migration.h"
